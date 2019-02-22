@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Hello, WebVR! • A-Frame</title>
+    <meta name="description" content="Hello, WebVR! • A-Frame">
+    <script src="https://aframe.io/releases/0.9.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-physics-system@1.4.0/dist/aframe-physics-system.min.js"></script>
+    
+    <script src="perlin.js"></script>
+    <script src="a-frame-perlin-landscape.js"></script>    
+  </head>
+  <body>
+    <a-scene physics background="color: #ECECEC">
+        <a-camera id="camera" position="100 10 100" wasd-controls="acceleration:200;enabled:true;fly:true;" look>
+            <a-cursor id="cursor" color="black"></a-cursor>
+        </a-camera>
+        <a-light type="point" color="white" position="100 250 100"></a-light>
+         
+        <a-entity position="0 -25 0" geometry="primitive: grid;width: 200; depth: 200;max_height:50;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen;"></a-entity>
+        <a-plane  height="200" width="200" rotation="-90 0 0" position="100 0 100" material="color:blue" ></a-plane>
+
+        <a-sphere position="100 25 50" radius="1.25" color="#EF2D5E" dynamic-body></a-sphere>
+    </a-scene>
+  </body>
+</html>
