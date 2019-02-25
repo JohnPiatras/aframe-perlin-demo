@@ -55,16 +55,16 @@ PerlinNoiseGenerator.prototype.grad = function(hash, x, y) {
             return y;
         break;
         case 0x4:
-            return x;
+            return x + y;
         break;
         case 0x5:
-            return -y;
+            return x - y;
         break;
         case 0x6:
-            return -x;
+            return -x + y;
         break;
         case 0x7:
-            return y;
+            return -x - y;
         break;
     }
 }
