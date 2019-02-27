@@ -127,14 +127,65 @@ PerlinNoiseGenerator.prototype.generate = function(w, h, initial_freq, steps, am
             map.push( total / maxValue);
         }
     }
-    
+
+    //Here we stretch our map height wise to use the whole range from 0.0 to 1.0
+    var min_h = map[0];
+    var max_h = 0;
+    for(var i = 0; i < map.length; i++){
+        if(map[i] > max_h){
+            max_h = map[i];
+        }else if (map[i] < min_h){
+            min_h = map[i];
+        }
+    }
+    //rescale
+    var f = 1.0 / (max_h - min_h);
+    for(var i = 0; i < map.length; i++){
+        map[i] = f * (map[i] - min_h);
+    }
+
     return map;
 }
 
 
 
 
+PerlinNoiseGenerator.prototype.generate2 = function(w, h, freqs, amplitudes){
+    var map = [];
+    
+    console.log("Generating " + w + "x" + h + " perlin map");
+    for(var j = 0; j < h; j++){
+        for(var i = 0; i < w; i++){            
+            var maxValue = 0;
+            var total = 0;
+            
+            for(var k=0;k < freqs.length;k++) {        
+                total += this.perlin(i / freqs[k], j / freqs[k]) * amplitudes[k];        
+                maxValue += amplitudes[k];        
+                
+            }            
+            map.push( total / maxValue);
+        }
+    }
 
+    //Here we stretch our map height wise to use the whole range from 0.0 to 1.0
+    var min_h = map[0];
+    var max_h = 0;
+    for(var i = 0; i < map.length; i++){
+        if(map[i] > max_h){
+            max_h = map[i];
+        }else if (map[i] < min_h){
+            min_h = map[i];
+        }
+    }
+    //rescale
+    var f = 1.0 / (max_h - min_h);
+    for(var i = 0; i < map.length; i++){
+        map[i] = f * (map[i] - min_h);
+    }
+
+    return map;
+}
 
         
         
