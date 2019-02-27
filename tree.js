@@ -1,9 +1,10 @@
-AFRAME.registerGeometry('tree', {
+AFRAME.registerComponent('tree', {
     schema: {
-      height: {default: 3, min: 1},      
+      height: {default: 3, min: 1},  
+      color: {type: 'color', default: '#0a0'},    
     },
 
-    init: function (data) {
+    init: function () {
       var geometry = new THREE.Geometry();      
           
       geometry.vertices.push(new THREE.Vector3(-3.0, 0.0, 0.0));     
@@ -24,6 +25,10 @@ AFRAME.registerGeometry('tree', {
       geometry.computeFaceNormals();
       geometry.computeVertexNormals();
       geometry.computeBoundingBox();
-      this.geometry = geometry;      
+      this.geometry = geometry;
+      // Create material.      
+      this.material = new THREE.MeshPhongMaterial({color: this.data.color});
+      this.mesh = new THREE.Mesh(this.geometry, this.material);
+      this.el.setObject3D('mesh', this.mesh);     
     }
   });

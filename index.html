@@ -11,61 +11,23 @@
     <script src="a-frame-perlin-landscape.js"></script>  
     <script src="terrain_shader.js"></script> 
     <script src="tree.js"></script>
+    <script src="grow_forest.js"></script>
     <style type="text/css">
       
     </style>
   </head>
   <body>
-    <a-scene physics background="color: #ECECEC" renderer="logarithmicDepthBuffer:auto;">
+    <a-scene background="color: #ECECEC" renderer="logarithmicDepthBuffer:auto;">
         <a-camera id="camera" camera="near:0.05;far:2000;" position="800 300 800" wasd-controls="acceleration:6000;enabled:true;fly:true;" look>
             <a-cursor id="cursor" color="black"></a-cursor>
         </a-camera>
-        <a-light type="point" color="white" position="100 2500 100"></a-light>
+        <a-light type="point" color="white" position="800 1000 800"></a-light>
          
-        <a-entity id="terrain" position="0 0 0" geometry="primitive: grid;width: 1600; depth: 1600;max_height:300;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" terrain-shader="color:darkgreen;"></a-entity>
+        <a-entity id="terrain" position="0 0 0" terrain="width: 1600; depth: 1600;max_height:300;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" terrain-shader="color:darkgreen;"></a-entity>
         <a-plane  id="sea" height="1600" width="1600" rotation="-90 0 0" position="800 100 800" material="color:blue" ></a-plane>
-        <!---<a-entity id="forrest" position="0 0 0" geometry="primitive: forrest;terrain_id:terrain;"></a-entity>-->
+        <a-sphere radius="25" position="0 500 0"></a-sphere>
         
-        
-    </a-scene>
-
-
-    <script>
-      var scene = document.querySelector("a-scene");
-      var terrain = document.getElementById("terrain");
-
-      var origin = new THREE.Vector3(800, 500, 800);
-      var direction = new THREE.Vector3(0, -1, 0);      
-      var raycaster = new THREE.Raycaster(origin, direction, 0.0, 2000.0 );
-      raycaster.objects = [terrain.object3D];
-      raycaster.recursive = false;
-      console.log("Raycasting for tree locations...");      
-      var tree_pos = [];
-      var ray_result = [];
-      for(var i = 0;i < 3; i++){        
-        origin.set(Math.random() * 1600, 500, Math.random() * 1600);
-        raycaster.set(origin, direction);
-        raycaster.intersectObject(terrain.object3D, true, ray_result);
-        
-        if(ray_result.length > 0){
-          if(ray_result[0].point.y > 120 && ray_result[0].point.y < 195){
-            tree_pos.push({x: ray_result[0].point.x, y: ray_result[0].point.y, z: ray_result[0].point.z});
-          }
-        }
-        ray_result = [];
-      }
-      console.log("Found " + tree_pos.length + " suitable tree locations");
-      console.log("Planting trees...");
-      var trees = document.createDocumentFragment();
-      for(var i = 0; i < tree_pos.length; i++){ 
-        var b = document.createElement('a-entity');
-        b.setAttribute('geometry', 'primitive:tree');
-        b.setAttribute('position', {x:tree_pos[i].x, y:tree_pos[i].y, z:tree_pos[i].z});        
-        b.setAttribute('material', "color:green");
-        trees.appendChild(b);
-      }
-      scene.appendChild(trees);
-
-    </script>
+        <a-entity grow-forest="treecount:5000"></a-entity>
+      </a-scene>
   </body>
 </html>
