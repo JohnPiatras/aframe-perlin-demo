@@ -15,9 +15,6 @@ void main() {
 
 const fragmentShader = `
 
-uniform sampler2D texture;
-uniform sampler2D rock_texture;
-uniform sampler2D sand_texture;
 varying vec3 vNormal; 
 varying vec3 vPosition;
 varying vec2 vUv;
@@ -26,7 +23,7 @@ vec3 heightblend(vec3 color1, vec3 color2, float vertexHeight, float transitionH
 {    
     
     float level2 = clamp((vertexHeight - (transitionHeight - blendDistance)) / (transitionHeight - (transitionHeight - blendDistance)), 0.0, 1.0);    
-    float level1 = 1.0 - level2;//max(transitionHeight , 0.0);    
+    float level1 = 1.0 - level2;
     return (color1 * level1) + (color2 * level2);
 }
 
@@ -36,8 +33,8 @@ void main() {
 
     float dProd = 0.5 + 0.5 * max(0.0, dot(vNormal, light));
 
-    vec3 blend0 = heightblend( texture2D(sand_texture, vUv).rgb, texture2D(texture, vUv).rgb , vPosition.y, 120.0, 10.0);
-    vec3 blend1 = heightblend( blend0, texture2D(rock_texture, vUv).rgb , vPosition.y, 225.0, 30.0);
+    vec3 blend0 = heightblend( vec3(1.0, 1.0, 0), vec3(0.25, 0.75, 0.25) , vPosition.y, 120.0, 10.0);
+    vec3 blend1 = heightblend( blend0, vec3(0.4, 0.4, 0.4) , vPosition.y, 225.0, 30.0);
     vec3 blend2 = heightblend( blend1, vec3(1.0, 1.0, 1.0) , vPosition.y, 275.0, 15.0);
     gl_FragColor = vec4(dProd * blend2, 1.0);
 }
@@ -58,9 +55,6 @@ AFRAME.registerComponent('terrain-shader', {
     this.material  = new THREE.ShaderMaterial({
       uniforms: {
         u_color: { value: new THREE.Color(data.color) },
-        texture: { type: "t", value: new THREE.TextureLoader().load( "assets/grass.jpg" ) },
-        rock_texture: { type: "t", value: new THREE.TextureLoader().load( "assets/rock.jpg" ) },
-        sand_texture: { type: "t", value: new THREE.TextureLoader().load( "assets/sand.jpg" ) }
       },
       vertexShader,
       fragmentShader

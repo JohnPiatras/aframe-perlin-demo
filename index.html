@@ -10,8 +10,7 @@
     <script src="scripts/perlin.js"></script>
     <script src="scripts/a-frame-perlin-landscape.js"></script>  
     <script src="scripts/terrain_shader.js"></script> 
-    <script src="scripts/tree.js"></script>
-    <script src="scripts/grow_forest.js"></script>
+
 
   </head>
   <body>
@@ -27,8 +26,7 @@
          
         <a-entity id="terrain" position="0 0 0" terrain="width: 1600; depth: 1600;max_height:300;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" terrain-shader="color:darkgreen;"></a-entity>
         <a-plane  id="sea" height="1600" width="1600" rotation="-90 0 0" position="800 100 800" material="color:blue" ></a-plane>
-                
-        <a-entity grow-forest="treecount:1500"></a-entity>
+                       
       </a-scene>
   </body>
 </html>
