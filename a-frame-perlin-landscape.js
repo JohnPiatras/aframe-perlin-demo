@@ -14,7 +14,7 @@ AFRAME.registerGeometry('grid', {
       var spacing_y = data.depth / data.depth_divisions;
 
       var perlin_gen = new PerlinNoiseGenerator();
-      var perlinData =perlin_gen.generate(data.width_divisions, data.depth_divisions, 128, 5, 1.5);
+      var perlinData =perlin_gen.generate(data.width_divisions, data.depth_divisions, 128, 4, 2);
       
       for(var y = 0; y < data.depth_divisions; y++){
         for(var x = 0; x < data.width_divisions; x++){
