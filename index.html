@@ -7,17 +7,19 @@
     <script src="https://aframe.io/releases/0.9.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-physics-system@1.4.0/dist/aframe-physics-system.min.js"></script>
     
-    <script src="perlin.js"></script>
-    <script src="a-frame-perlin-landscape.js"></script>  
-    <script src="terrain_shader.js"></script> 
-    <script src="tree.js"></script>
-    <script src="grow_forest.js"></script>
-    <style type="text/css">
-      
-    </style>
+    <script src="scripts/perlin.js"></script>
+    <script src="scripts/a-frame-perlin-landscape.js"></script>  
+    <script src="scripts/terrain_shader.js"></script> 
+    <script src="scripts/tree.js"></script>
+    <script src="scripts/grow_forest.js"></script>
+
   </head>
   <body>
-    <a-scene background="color: #ECECEC" renderer="logarithmicDepthBuffer:auto;">
+    <a-scene background="color: #ccddff" renderer="logarithmicDepthBuffer:auto;">
+        <a-assets>
+            <a-asset-item id="tree1" src="assets/tree1.obj"></a-asset-item>
+            <a-asset-item id="tree1-mtl" src="assets/tree1.mtl"></a-asset-item>
+        </a-assets>
         <a-camera id="camera" camera="near:0.05;far:2000;" position="800 300 800" wasd-controls="acceleration:6000;enabled:true;fly:true;" look>
             <a-cursor id="cursor" color="black"></a-cursor>
         </a-camera>
@@ -27,7 +29,7 @@
         <a-plane  id="sea" height="1600" width="1600" rotation="-90 0 0" position="800 100 800" material="color:blue" ></a-plane>
         <a-sphere radius="25" position="0 500 0"></a-sphere>
         
-        <a-entity grow-forest="treecount:5000"></a-entity>
+        <a-entity grow-forest="treecount:3000"></a-entity>
       </a-scene>
   </body>
 </html>

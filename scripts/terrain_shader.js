@@ -58,9 +58,9 @@ AFRAME.registerComponent('terrain-shader', {
     this.material  = new THREE.ShaderMaterial({
       uniforms: {
         u_color: { value: new THREE.Color(data.color) },
-        texture: { type: "t", value: new THREE.TextureLoader().load( "grass.jpg" ) },
-        rock_texture: { type: "t", value: new THREE.TextureLoader().load( "rock.jpg" ) },
-        sand_texture: { type: "t", value: new THREE.TextureLoader().load( "sand.jpg" ) }
+        texture: { type: "t", value: new THREE.TextureLoader().load( "assets/grass.jpg" ) },
+        rock_texture: { type: "t", value: new THREE.TextureLoader().load( "assets/rock.jpg" ) },
+        sand_texture: { type: "t", value: new THREE.TextureLoader().load( "assets/sand.jpg" ) }
       },
       vertexShader,
       fragmentShader

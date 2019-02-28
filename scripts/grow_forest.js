@@ -5,8 +5,8 @@ AFRAME.registerComponent('grow-forest', {
     init: function () {        
         //Rewrote the tree place to use a getHeight method that I've built into the 
         //terrain component as the raycaster was too slow to place thousands of trees.
-        var scene = this.el;//document.querySelector("a-scene");
-        var terrain = document.getElementById("terrain");
+        var scene = this.el.sceneEl;//document.querySelector("a-scene");        
+        var terrain = scene.querySelector("#terrain");
 
         //var origin = new THREE.Vector3(800, 500, 800);
         //var direction = new THREE.Vector3(0, -1, 0);      
@@ -43,6 +43,7 @@ AFRAME.registerComponent('grow-forest', {
         for(var i = 0; i < tree_pos.length; i++){ 
             var tree = document.createElement('a-entity');
             tree.setAttribute('tree','');
+           // tree.setAttribute('obj-model','obj:#tree1; mtl:#tree1-mtl');
             tree.setAttribute('position', {x:tree_pos[i].x, y:tree_pos[i].y, z:tree_pos[i].z});        
             //tree.setAttribute('color', "red");
             //tree.setAttribute('material', "color:red;");
