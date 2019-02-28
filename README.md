@@ -21,10 +21,13 @@ https://flafla2.github.io/2014/08/09/perlinnoise.html
 https://www.shadertoy.com/view/4tGSzW
 
 ## Shaders
-[A-Frame documentation on materials](https://github.com/aframevr/aframe/blob/master/docs/components/material.md)
+[A-Frame documentation on materials](https://github.com/aframevr/aframe/blob/master/docs/components/material.md).
+
 [The Book Of Shaders](https://thebookofshaders.com) is a good start but is currently incomplete and does not get as far as using textures.
+
 Here is an [example](https://glitch.com/edit/#!/aframe-displacement-shader) shader in A-Frame.
-[A height blending shader](http://untitledgam.es/2017/01/height-blending-shader/)
+
+I learned about height blending [here](http://untitledgam.es/2017/01/height-blending-shader/).
 
 ## ThreeJS
 https://threejs.org/docs/index.html#manual/en/introduction/Creating-a-scene
