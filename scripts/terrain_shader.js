@@ -26,7 +26,7 @@ vec3 heightblend(vec3 color1, vec3 color2, float vertexHeight, float transitionH
 {    
     
     float level2 = clamp((vertexHeight - (transitionHeight - blendDistance)) / (transitionHeight - (transitionHeight - blendDistance)), 0.0, 1.0);    
-    float level1 = 1.0 - level2;//max(transitionHeight , 0.0);    
+    float level1 = 1.0 - level2;
     return (color1 * level1) + (color2 * level2);
 }
 
