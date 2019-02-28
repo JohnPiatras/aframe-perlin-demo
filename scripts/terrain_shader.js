@@ -1,5 +1,13 @@
-//Simple terrain shader
+// Simple terrain shader
 // John Burns
+// I got started here 
+//   https://github.com/aframevr/aframe/blob/master/docs/components/material.md
+// and here
+//   https://thebookofshaders.com
+// but the aframe shader code is based on
+//   https://glitch.com/edit/#!/aframe-displacement-shader
+// and the fragment shader is based on
+//   http://untitledgam.es/2017/01/height-blending-shader/
 const vertexShader = `
 varying vec2 vUv;
 varying vec3 vNormal;
