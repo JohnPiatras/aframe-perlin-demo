@@ -1,6 +1,7 @@
 AFRAME.registerComponent('textured-tree', {
     schema: {
-      height: {default: 20, min: 1},  
+      height: {default: 20, min: 1},
+      width: {default:7, min: 1},  
       color: {type: 'color', default: '#0a0'},    
     },
 
@@ -53,7 +54,7 @@ AFRAME.registerComponent('textured-tree', {
       var geometry = new THREE.Geometry();      
       var h = this.data.height + (0.5 * this.data.height * (Math.random() - 0.5)) ;
       //var h = 15;
-      var w = h / 3;
+      var w = this.data.width;
 
       geometry.vertices.push(new THREE.Vector3(-w, 0.0, 0.0));     
       geometry.vertices.push(new THREE.Vector3(w, 0.0, 0.0));     

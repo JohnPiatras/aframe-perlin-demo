@@ -6,7 +6,7 @@ AFRAME.registerComponent('tree', {
 
     init: function () {
       var geometry = new THREE.Geometry();      
-      var h = this.data.height + (0.5 * this.data.height * (Math.random() - 0.5)) ;
+      var h = this.data.height;
       var w = h / 3;
 
       geometry.vertices.push(new THREE.Vector3(-w/8, 0.0, 0.0));     

@@ -56,10 +56,7 @@ AFRAME.registerComponent('terrain-shader', {
       color: {type: 'color'},
   },
 
-  /**
-   * Creates a new THREE.ShaderMaterial using the two shaders defined
-   * in vertex.glsl and fragment.glsl.
-   */
+  
   init: function () {
     const data = this.data;
   
@@ -78,17 +75,10 @@ AFRAME.registerComponent('terrain-shader', {
     this.el.addEventListener('model-loaded', () => this.applyToMesh());
   },
 
-
-  /**
-   * Update the ShaderMaterial when component data changes.
-   */
+  /*
   update: function () {
-    this.material.uniforms.u_color.value.set(this.data.color);   
-  },
+  },*/
     
-  /**
-   * Apply the material to the current entity.
-   */
   applyToMesh: function() {
     const mesh = this.el.getObject3D('mesh');
     if (mesh) {
@@ -96,11 +86,8 @@ AFRAME.registerComponent('terrain-shader', {
     }
   },
 
-  /**
-   * On each frame, update the 'time' uniform in the shaders.
-   */
+  /*
   tick: function (t) {
-    //this.material.uniforms.u_time.value = t / 1000;
-  }
+  }*/
   
 })
