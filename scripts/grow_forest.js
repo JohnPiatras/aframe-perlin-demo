@@ -1,6 +1,9 @@
 AFRAME.registerComponent('grow-forest', {
     schema: {
-        treecount: {default: 1000, min: 0},          
+        treecount: {default: 1000, min: 0},
+        height: {default: 20, min:1},
+        texture: {},
+        alpha: {}          
       },
     init: function () {        
         //Rewrote the tree place to use a getHeight method that I've built into the 
@@ -42,11 +45,16 @@ AFRAME.registerComponent('grow-forest', {
         var trees = document.createDocumentFragment();
         for(var i = 0; i < tree_pos.length; i++){ 
             var tree = document.createElement('a-entity');
-            tree.setAttribute('tree','');
-           // tree.setAttribute('obj-model','obj:#tree1; mtl:#tree1-mtl');
-            tree.setAttribute('position', {x:tree_pos[i].x, y:tree_pos[i].y, z:tree_pos[i].z});        
+            tree.setAttribute('textured-tree','height:' + this.data.height);
+            //tree.addEventListener('model-loaded', function (e) { e.detail.model.traverse(function (node) { if ( node.isMesh ) node.material.alphaTest = 0.5; }); });
+            //tree.setAttribute('obj-model','obj:#tree1; mtl:#tree1mtl');
+            tree.setAttribute('position', {x:tree_pos[i].x, y:tree_pos[i].y, z:tree_pos[i].z});
+            
+            tree.setAttribute('class','tree');
+            tree.setAttribute('instanced-material',`texture:${this.data.texture};alpha:${this.data.alpha};`);
             //tree.setAttribute('color', "red");
             //tree.setAttribute('material', "color:red;");
+            
             trees.appendChild(tree);
             
         }
