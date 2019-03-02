@@ -11,7 +11,7 @@ var PerlinNoiseGenerator = function(){
     // arranged array of all numbers from 0-255 inclusive.
 
     this.grad_lookup_table = this.generate_lookup_table();
-    this.grad_lookup_table = test_table;
+    //this.grad_lookup_table = test_table;
 }
 
 PerlinNoiseGenerator.prototype.generate_lookup_table = function(){
