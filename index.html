@@ -10,7 +10,7 @@
 
     <script src="scripts/perlin.js"></script>
     <script src="scripts/a-frame-perlin-landscape.js"></script>  
-    <script src="scripts/terrain-shader.js"></script> 
+    <!--<script src="scripts/terrain-shader.js"></script>--> 
     <script src="scripts/tree.js"></script>
     <script src="scripts/textured-tree.js"></script>
     <script src="scripts/grow-forest.js"></script>
@@ -23,13 +23,14 @@
         <a-assets>
 
         </a-assets>
+        <!--<a-camera id="camera" camera="near:0.05;far:2000;" position="800 300 800" wasd-controls="acceleration:6000;enabled:true;fly:true;" look>-->
         <a-camera id="camera" camera="near:0.05;far:2000;" position="800 300 800" wasd-controls="acceleration:6000;enabled:true;fly:true;" look>
-            <a-cursor id="cursor" color="black"></a-cursor>
+          <a-cursor id="cursor" color="black"></a-cursor>
         </a-camera>
         <a-light type="point" color="white" position="800 1000 800"></a-light>
          
         <!--<a-entity id="terrain" position="0 0 0" terrain="width: 1600; depth: 1600;max_height:300;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" terrain-shader="color:darkgreen;"></a-entity>-->
-        <a-entity id="terrain" position="0 0 0" terrain="width: 1600; depth: 1600;max_height:300;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" terrain-shader="color:darkgreen;"></a-entity>
+        <a-entity id="terrain" position="0 0 0" terrain="width: 1600; depth: 1600;max_height:300;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" ></a-entity>
         
         <a-plane  id="sea" height="1600" width="1600" rotation="-90 0 0" position="800 100 800" material="color:blue" ></a-plane>
         <!--<a-entity instanced-material="texture:assets/tree2.png;alpha:assets/tree2-alpha.png;" textured-tree  position="800 300 780" ></a-entity>-->
@@ -38,11 +39,11 @@
         <a-entity grow-forest="terrain_id:terrain;geomerger_id:forest;treecount:5000;texture:assets/tree1.png;alpha:assets/tree1-alpha.png;width:10;height:30;height_variation:3;"></a-entity>
         <a-entity grow-forest="terrain_id:terrain;geomerger_id:forest;treecount:5000;texture:assets/tree3.png;alpha:assets/tree3-alpha.png;width:12;height:36;height_variation:3;"></a-entity>
         -->
-        <!--
+        
         <a-entity forest="terrain_id:terrain;treecount:4000;width:10;height:25;height_variation:8;" instanced-material="texture:assets/tree1.png;alpha:assets/tree1-alpha.png;" position="0 0 0" ></a-entity>
         <a-entity forest="terrain_id:terrain;treecount:4000;width:5;height:15;height_variation:3;" instanced-material="texture:assets/tree2.png;alpha:assets/tree2-alpha.png;" position="0 0 0" ></a-entity>
         <a-entity forest="terrain_id:terrain;treecount:4000;width:6;height:18;height_variation:3;" instanced-material="texture:assets/tree3.png;alpha:assets/tree3-alpha.png;" position="0 0 0" ></a-entity>
-        -->
+        
       </a-scene>
      
   </body>
