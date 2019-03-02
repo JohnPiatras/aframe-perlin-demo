@@ -17,8 +17,8 @@ AFRAME.registerComponent('terrain', {
       //var perlinData =perlin_gen.generate(this.data.width_divisions, this.data.depth_divisions, 128, 5, 1.4);
       var perlinData =perlin_gen.generate2(this.data.width_divisions, this.data.depth_divisions, [128, 64, 32, 16], [1, 0.5, 0.25, 0.125]);      
       var vc = 0;
-      for(var y = 0; y < this.data.depth_divisions; y++){
-        for(var x = 0; x < this.data.width_divisions; x++){
+      for(var y = 0; y < this.data.depth_divisions; y++){        
+        for(var x = 0; x < this.data.width_divisions; x++){          
           var height = this.data.max_height * perlinData[x + (y * this.data.depth_divisions)];          
           geometry.vertices.push(new THREE.Vector3(x * spacing_x, height , y * spacing_y));
           perlinData[x + (y * this.data.depth_divisions)] = height; //update the height here
@@ -67,6 +67,14 @@ AFRAME.registerComponent('terrain', {
       this.el.setObject3D('mesh', this.mesh);
       this.heightMap = perlinData;
       //console.dir(this);
+    },
+
+    getWidth: function(){
+      return this.data.width;
+    },
+
+    getDepth: function(){
+      return this.data.depth;
     },
 
     getHeight: function(x, y){

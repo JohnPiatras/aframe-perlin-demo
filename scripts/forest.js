@@ -45,6 +45,8 @@ AFRAME.registerComponent('forest', {
         console.log("Planting " + this.data.treecount + " trees...");      
                
         var n_trees_planted = 0;
+        var terrain_w = terrain.getWidth();
+        var terrain_h = terrain.getHeight();
         while(n_trees_planted < this.data.treecount){            
             var tx = Math.random() * 1600;
             var tz = Math.random() * 1600;
