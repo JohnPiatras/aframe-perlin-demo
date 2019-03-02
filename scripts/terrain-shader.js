@@ -81,9 +81,27 @@ AFRAME.registerComponent('terrain-shader', {
     
   applyToMesh: function() {
     const mesh = this.el.getObject3D('mesh');
+    console.dir(mesh);
     if (mesh) {
       mesh.material = this.material;
     }
+
+    /*console.log("Attempting to apply terrain shader");
+    const object = this.el.object3D;
+    console.dir(object);
+    var c = 0;
+    if ( object !== undefined ) {
+      
+      object.traverse( function ( node ) {
+          if(c < 1){
+          if ( node.isMesh ) {
+         
+            console.log("material to mesh");
+              node.material = this.material;
+          }          
+        }
+        c++;
+      });*/
   },
 
   /*
