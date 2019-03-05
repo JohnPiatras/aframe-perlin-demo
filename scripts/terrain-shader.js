@@ -12,10 +12,13 @@ const vertexShader = `
 varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vPosition;
+uniform sampler2D heightmap;
+uniform float max_height;
 void main() {
   vUv = uv;
   vNormal = normal;
   vPosition = position;
+  vPosition.y = vPosition.y * texture2D(heightmap, vUv) * max_height;
   gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 }
 `;
@@ -54,6 +57,7 @@ void main() {
 AFRAME.registerComponent('terrain-shader', {
   schema: {
       color: {type: 'color'},
+      heightmap: {},
   },
 
   
@@ -63,6 +67,7 @@ AFRAME.registerComponent('terrain-shader', {
     this.material  = new THREE.ShaderMaterial({
       uniforms: {
         u_color: { value: new THREE.Color(data.color) },
+        heightmap: { type: "t", value: new THREE.Texture(data.heightmap)},
         texture: { type: "t", value: new THREE.TextureLoader().load( "assets/grass.jpg" ) },
         rock_texture: { type: "t", value: new THREE.TextureLoader().load( "assets/rock.jpg" ) },
         sand_texture: { type: "t", value: new THREE.TextureLoader().load( "assets/sand.jpg" ) }
@@ -71,6 +76,7 @@ AFRAME.registerComponent('terrain-shader', {
       fragmentShader
     });
     
+    this.
     this.applyToMesh();
     this.el.addEventListener('model-loaded', () => this.applyToMesh());
   },
