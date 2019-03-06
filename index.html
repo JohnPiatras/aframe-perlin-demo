@@ -21,16 +21,26 @@
         width:800px;
         height:600px;
       }
-      #canvas{
-        float:right;
-        width:512px;
-        height:512px;
+      #heightcanvas{        
+        position:absolute;
+        width:256px;
+        height:256px;        
+        left:850px;
+        top:0px;        
+      }
+      #normcanvas{        
+        position:absolute;
+        width:256px;
+        height:256px;                
+        left:850px;
+        top:260px;
       }
     </style>
 
   </head>
   <body>
-      <canvas id="canvas" width='256' height='256'></canvas>
+      <canvas id="heightcanvas" width='256' height='256'></canvas>
+      <canvas id="normcanvas" width='256' height='256'></canvas>
       <div style="display:none;">
           <img id="source"
                src="assets/test.png"
@@ -41,7 +51,7 @@
           
         </a-assets>
         <!--<a-camera id="camera" camera="near:0.05;far:5000;" position="800 300 800" wasd-controls="acceleration:6000;enabled:true;fly:true;" look>-->
-        <a-camera id="camera" camera="near:0.05;far:5000;" position="0 600 0" wasd-controls="acceleration:6000;enabled:true;fly:true;" look>
+        <a-camera id="camera" camera="near:0.05;far:5000;" position="0 600 0" wasd-controls="acceleration:6000;enabled:true;fly:true;" rotation="0 180 0">
           <a-cursor id="cursor" color="black"></a-cursor>
         </a-camera>
         <a-light type="point" color="white" position="800 1000 800"></a-light>
@@ -58,14 +68,17 @@
         -->
         
         <!--<a-entity forest="terrain_id:terrain;treecount:4000;width:10;height:25;height_variation:8;" instanced-material="texture:assets/tree1.png;alpha:assets/tree1-alpha.png;" position="0 0 0" ></a-entity>-->
-        <a-entity forest="terrain_id:terrain;treecount:4000;width:5;height:15;height_variation:3;" instanced-material="texture:assets/tree2.png;alpha:assets/tree2-alpha.png;" position="-1600 0 -1600" ></a-entity>
+        <!--<a-entity forest="terrain_id:terrain;treecount:4000;width:5;height:15;height_variation:3;" instanced-material="texture:assets/tree2.png;alpha:assets/tree2-alpha.png;" position="-1600 0 -1600" ></a-entity>
         <a-entity forest="terrain_id:terrain;treecount:4000;width:10;height:30;height_variation:3;" instanced-material="texture:assets/tree1.png;alpha:assets/tree1-alpha.png;" position="-1600 0 -1600" ></a-entity>
-        <a-entity forest="terrain_id:terrain;treecount:4000;width:12;height:36;height_variation:3;" instanced-material="texture:assets/tree3.png;alpha:assets/tree3-alpha.png;" position="-1600 0 -1600" ></a-entity>
+        <a-entity forest="terrain_id:terrain;treecount:4000;width:12;height:36;height_variation:3;" instanced-material="texture:assets/tree3.png;alpha:assets/tree3-alpha.png;" position="-1600 0 -1600" ></a-entity>-->
 
-        <a-sphere color="red" radius="50" position="-800 300 -800"></a-sphere>
-        <a-sphere color="blue" radius="50" position="800 300 -800"></a-sphere>
-        <a-sphere color="yellow" radius="50" position="-800 300 800"></a-sphere>
-        <a-sphere color="yellow" radius="50" position="800 300 800"></a-sphere>
+        <a-sphere color="red" radius="50" position="-1600 600 -1600"></a-sphere>
+        <a-sphere color="blue" radius="50" position="1600 600 -1600"></a-sphere>
+        <a-sphere color="yellow" radius="50" position="-1600 600 1600"></a-sphere>
+        <a-sphere color="yellow" radius="50" position="1600 600 1600"></a-sphere>
+        <a-sphere color="green" radius="50" position="0 600 0"></a-sphere>
+        <a-sphere color="white" radius="50" position="0 600 1600"></a-sphere>
+
 
         
         <!--<a-entity forest="terrain_id:terrain;treecount:4000;width:6;height:18;height_variation:3;" instanced-material="texture:assets/tree3.png;alpha:assets/tree3-alpha.png;" position="0 0 0" ></a-entity>-->

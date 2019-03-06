@@ -4,6 +4,7 @@ varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vPosition;
 uniform sampler2D heightmap;
+uniform sampler2D normalmap;
 uniform float max_height;
 void main() {
   vUv = uv;
@@ -42,6 +43,7 @@ void main() {
   //vPosition.y = height.r;
   vPosition += vec3(-rx, height.r - (max_height / 2.0), -rz);
   gl_Position = projectionMatrix * modelViewMatrix * vec4( vPosition, 1.0 );
+  vNormal = texture2D(normalmap, hUV).rgb;
 }
 `;
 
@@ -65,7 +67,7 @@ vec3 heightblend(vec3 color1, vec3 color2, float vertexHeight, float transitionH
 }
 
 void main() {
-    vec3 light = vec3(0.5, 0.5, 1.0);
+    vec3 light = vec3(0.5, 0.25, 1.0);
     light = normalize(light);
 
     float dProd = 0.5 + 0.5 * max(0.0, dot(vNormal, light));
@@ -156,10 +158,10 @@ AFRAME.registerComponent('terrain', {
         for(var x = 0; x < chunk_width - 1; x++){
           u = (x + start_x) * 0.1;
           nu = u + 0.1;      
-          var i = (y * chunk_depth) + x;  
+          var i = (y * chunk_width) + x;  
           
-          geometry.faces.push(new THREE.Face3(i + chunk_depth, i + 1, i ));          
-          geometry.faces.push(new THREE.Face3(i + chunk_depth, i + chunk_depth + 1, i + 1));
+          geometry.faces.push(new THREE.Face3(i + chunk_width, i + 1, i ));          
+          geometry.faces.push(new THREE.Face3(i + chunk_width, i + chunk_width + 1, i + 1));
           geometry.faceVertexUvs[0].push( [new THREE.Vector2(u, nv), new THREE.Vector2(nu, v), new THREE.Vector2(u,v)] );  
           geometry.faceVertexUvs[0].push( [new THREE.Vector2(u,nv), new THREE.Vector2(nu,nv), new THREE.Vector2(nu, v)] );                                
 
@@ -203,7 +205,7 @@ AFRAME.registerComponent('terrain', {
 
       //get heights of the four surrounding vertices and interpolate
       var h0 = this.heightMap[vertex];
-        var h1 = this.heightMap[vertex + 1];
+      var h1 = this.heightMap[vertex + 1];
       var h2 = this.heightMap[vertex + d_div];
       var h3 = this.heightMap[vertex + d_div + 1];
       var h01 = h0 * (1 - fx) + (h1 * fx);
@@ -221,23 +223,18 @@ AFRAME.registerComponent('terrain', {
       return h;
     },
 
-    init: function () {      
+    // helper function - generates perlin noise based heightmap and stores it
+    // as an array for use in getting height later and as a canvas context to
+    //be used as a texture
+    generateHeightMap: function(){
       var perlin_gen = new PerlinNoiseGenerator();
       //var perlinData =perlin_gen.generate(this.data.width_divisions, this.data.depth_divisions, 128, 5, 1.4);
       this.heightMap = perlin_gen.generate2(this.data.width_divisions, this.data.depth_divisions, [128, 64, 32, 16, 8], [1, 0.5, 0.25, 0.125, 0.125/2]);      
-      //fix the height map
-      //for(var i = 0;i < this.heightMap.length; i++){
-      //  this.heightMap[i] = (this.heightMap[i] * 255.0) | 0;//this.data.max_height;
-        //this.heightMap[i] = 0;
-      //}      
-      //this.material = new THREE.MeshStandardMaterial({color: this.data.color});
       
       var scene = this.el.sceneEl;
       this.cameraEl = document.querySelector("a-camera");     
-      var c = document.getElementById("canvas");
-      var ctx = c.getContext("2d");
-      //const image = document.getElementById('source');
-      //ctx.drawImage(image, 0, 0, 256, 256, 0, 0, 256, 256);
+      this.heightMapCanvas = document.getElementById("heightcanvas");
+      var ctx = this.heightMapCanvas.getContext("2d");
       var imgData = ctx.createImageData(this.data.width_divisions, this.data.depth_divisions);      
       for (var i = 0; i < imgData.data.length; i += 4) {
           var p = this.heightMap[i / 4];
@@ -264,16 +261,105 @@ AFRAME.registerComponent('terrain', {
           //this.heightMap[i/4] = imgData[i];
           
       }
+
+      for(var i = 0;i < this.heightMap.length; i++){
+        this.heightMap[i] *= this.data.max_height;            
+      }
       
-      ctx.putImageData(imgData, 0, 0);      
+      ctx.putImageData(imgData, 0, 0);   
+    },
+
+    generateNormalMap: function(){
+      var vertexSpacing = {
+        x: this.data.width / (this.data.width_divisions - 1),
+        z: this.data.depth / (this.data.depth_divisions - 1),
+      }
+      var mapDim = {
+        x: this.data.width_divisions,
+        y: this.data.depth_divisions,
+      }
+
+      var scene = this.el.sceneEl;     
+      this.normalMapCanvas = document.getElementById("normcanvas");
+      var ctx = this.normalMapCanvas.getContext("2d");
+      var imgData = ctx.createImageData(this.data.width_divisions, this.data.depth_divisions);      
+      for (var i = 0; i < imgData.data.length; i += 4) {
+          var v_index = i / 4; //current vertex index                     
+          var ix = v_index % this.data.width_divisions;
+          var iy = (v_index / this.data.width_divisions) | 0;
+          var curVertex = new THREE.Vector3(0,0,0);
+          curVertex.x = ix * vertexSpacing.x;
+          curVertex.y = this.heightMap[ix + iy * mapDim.y];
+          curVertex.z = iy * vertexSpacing.z;
+          
+          //build array of surrounding vertix indices (there are six)
+          
+          var vertex_indices = [];
+          vertex_indices.push( {x: ix - 1, y : iy + 1} );
+          vertex_indices.push( {x: ix    , y : iy + 1} );
+          vertex_indices.push( {x: ix + 1, y : iy    } );
+          vertex_indices.push( {x: ix + 1, y : iy - 1} );
+          vertex_indices.push( {x: ix    , y : iy - 1} );
+          vertex_indices.push( {x: ix - 1, y : iy    } );
+                    
+          //now fetch actual vertex x, y, z values
+          var vertices = vertex_indices.map( (vi) => {
+            var v = {x: 0, y: 0, z: 0};
+            v.x = vi.x * vertexSpacing.x;
+            v.z = vi.y * vertexSpacing.z;
+
+            v.y = this.heightMap[((vi.x + 256) % 256)+ ((vi.y + 256) % 256) * mapDim.y];
+            return new THREE.Vector3(v.x, v.y, v.z);
+          });  
+
+          var normal = new THREE.Vector3(0,0,0);
+          var v1 = new THREE.Vector3(0,0,0);
+          var v2 = new THREE.Vector3(0,0,0);
+          var n = new THREE.Vector3(0,0,0);
+          var next_f;
+          //iterate through 6 surrounding faces
+          for(var f = 0; f < 6; f++){
+            next_f = (f + 1) % 6;            
+            v1.subVectors(vertices[f], curVertex);
+            v2.subVectors(vertices[next_f], curVertex);
+            n.crossVectors(v1, v2);
+            normal.add(n);
+          }
+          normal.normalize();
+
+          /*if(ix == 0 && iy == 1){
+            console.log("ix = " + ix + ", iy = " + iy);
+            console.table(vertex_indices);
+            console.table(vertices);
+            console.log("Normal:");
+            console.table(normal);
+
+          }*/
+          imgData.data[i+0] = (normal.x * 255) | 0;
+          imgData.data[i+1] = (normal.y * 255) | 0;
+          imgData.data[i+2] = (normal.z * 255) | 0;
+          imgData.data[i+3] = 255;                    
+      }
+      
+      ctx.putImageData(imgData, 0, 0);   
+
+    },
+
+    init: function () {  
+      
+      //sets up this.heightMap and this.heightMapCanvas
+      this.generateHeightMap();
+      this.generateNormalMap();
       var texture = new THREE.TextureLoader().load( "assets/grass.jpg");
       texture.wrapT = texture.wrapS = THREE.RepeatWrapping;
       var rock_texture = new THREE.TextureLoader().load( "assets/rock.jpg");
       rock_texture.wrapT = rock_texture.wrapS = THREE.RepeatWrapping;
       var sand_texture = new THREE.TextureLoader().load( "assets/sand.jpg");
       sand_texture.wrapT = sand_texture.wrapS = THREE.RepeatWrapping;
-      var heightmap = new THREE.CanvasTexture(c);
+      var heightmap = new THREE.CanvasTexture(this.heightMapCanvas);
       heightmap.wrapT = heightmap.wrapS = THREE.RepeatWrapping;
+      var normalmap = new THREE.CanvasTexture(this.normalMapCanvas);
+      normalmap.wrapT = normalmap.wrapS = THREE.RepeatWrapping;
 
       this.material  = new THREE.ShaderMaterial({
         uniforms: {          
@@ -281,6 +367,7 @@ AFRAME.registerComponent('terrain', {
           rock_texture: { type: "t", value: rock_texture },
           sand_texture: { type: "t", value: sand_texture },
           heightmap: { type: "t", value: heightmap},
+          normalmap: { type: "t", value: normalmap},
           max_height: { type: "float", value: this.data.max_height}
         },
         vertexShader,
@@ -317,15 +404,7 @@ AFRAME.registerComponent('terrain', {
       //fix the height map
       var maxh = 0;
       var maxhi = 0;
-      for(var i = 0;i < this.heightMap.length; i++){
-          this.heightMap[i] *= this.data.max_height;
-          if(i > 32636 && i < 32642)console.log("h = " + i + ": " + this.heightMap[i] + ', max=' + this.data.max_height);
-          if(this.heightMap[i] > maxh){
-            maxh = this.heightMap[i];
-            maxhi = i;
-          }
-        //this.heightMap[i] = 0;
-      }
+      
 
       console.log("Map max height = " +  maxh + " at i = " + maxhi);
       console.log("center height at 800,800 is " + this.getHeight(800,800));
