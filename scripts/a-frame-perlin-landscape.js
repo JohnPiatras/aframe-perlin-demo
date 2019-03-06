@@ -9,13 +9,13 @@ void main() {
   vUv = uv;
   vNormal = normal;
   vPosition = position;
-  //float position_x = mod(modelMatrix[3][0], 1600.0);
+  
   float position_x = modelMatrix[3][0];
   float position_y = modelMatrix[3][1];
-  //float position_z = mod(modelMatrix[3][2], 1600.0);
+  
   float position_z = modelMatrix[3][2];
-  float a = position_x / (1600.0/2.55);
-  float b = position_z / (1600.0/2.55);
+  float a = position_x / (3200.0/2.55);
+  float b = position_z / (3200.0/2.55);
   a = fract(a);
   b = fract(b);
   vUv = uv + vec2(a, b);
@@ -26,7 +26,7 @@ void main() {
 
   //fix vertex world x and z to integer multiples of 1600 / 255
   //
-  float space = 1600.0 / 255.0;
+  float space = 3200.0 / 255.0;
   float ix = floor(wx / space) * space;
   float iz = floor(wz / space) * space;
   //get remainder parts to use to displace vertex x and z
@@ -34,13 +34,13 @@ void main() {
   float rz = wz - iz;
   
 
-  vec2 hUV = vec2(ix/1600.0, iz/1600.0);
+  vec2 hUV = vec2(ix/3200.0, -iz/3200.0) + vec2(0.5, 0.5);
 
 
-  vec4 height = texture2D(heightmap, hUV) * 300.0;
+  vec4 height = texture2D(heightmap, hUV) * max_height;
   vUv = hUV * 15.0;
   //vPosition.y = height.r;
-  vPosition += vec3(-rx, height.r, -rz);
+  vPosition += vec3(-rx, height.r - (max_height / 2.0), -rz);
   gl_Position = projectionMatrix * modelViewMatrix * vec4( vPosition, 1.0 );
 }
 `;
@@ -69,10 +69,10 @@ void main() {
     light = normalize(light);
 
     float dProd = 0.5 + 0.5 * max(0.0, dot(vNormal, light));
-
+    
     vec3 blend0 = heightblend( texture2D(sand_texture, vUv).rgb, texture2D(texture, vUv).rgb , vPosition.y, 120.0, 10.0);
-    vec3 blend1 = heightblend( blend0, texture2D(rock_texture, vUv).rgb , vPosition.y, 225.0, 30.0);
-    vec3 blend2 = heightblend( blend1, vec3(1.0, 1.0, 1.0) , vPosition.y, 275.0, 15.0);
+    vec3 blend1 = heightblend( blend0, texture2D(rock_texture, vUv).rgb , vPosition.y, 350.0, 30.0);
+    vec3 blend2 = heightblend( blend1, vec3(1.0, 1.0, 1.0) , vPosition.y, 500.0, 15.0);
     gl_FragColor = vec4(dProd * blend2, 1.0);
 
     //green - x axis
@@ -132,13 +132,14 @@ AFRAME.registerComponent('terrain', {
       
       var spacing_x = (this.data.width / ((this.data.width_divisions / chunk_width) + 1)) / (chunk_width - 1);
       var spacing_y = (this.data.depth / ((this.data.depth_divisions / chunk_depth) + 1)) / (chunk_depth - 1);
+      //var spacing_x = this.data.width / this.data.width_divisions;//(this.data.width / ((this.data.width_divisions / chunk_width) + 1)) / (chunk_width - 1);
+      //var spacing_y = this.data.depth / this.data.depth_divisions;//(this.data.depth / ((this.data.depth_divisions / chunk_depth) + 1)) / (chunk_depth - 1);
       debug.recordspacing(spacing_x, spacing_y);
       //console.log("start y = " + start_y);
       for(var y = start_y; y < chunk_depth + start_y; y++){        
-        for(var x = start_x; x < chunk_width + start_x; x++){          
-          var height = this.heightMap[x + (y * this.data.depth_divisions)];
+        for(var x = start_x; x < chunk_width + start_x; x++){                    
           //console.log(x+", "+y)          
-          geometry.vertices.push(new THREE.Vector3((x - start_x) * spacing_x, 0.0*height , (y - start_y) * spacing_y));          
+          geometry.vertices.push(new THREE.Vector3((x - start_x) * spacing_x, this.data.max_height / 2 , (y - start_y) * spacing_y));          
           if(debug.do){
             debug.recordxy((x - start_x) * spacing_x, (y - start_y) * spacing_y);
 
@@ -171,7 +172,7 @@ AFRAME.registerComponent('terrain', {
       geometry.mergeVertices();
       geometry.computeFaceNormals();
       geometry.computeVertexNormals();
-      geometry.computeBoundingBox();
+      geometry.computeBoundingBox();      
       return geometry;
     },
 
@@ -208,21 +209,22 @@ AFRAME.registerComponent('terrain', {
       var h01 = h0 * (1 - fx) + (h1 * fx);
       var h23 = h2 * (1 - fx) + (h3 * fx);
       var h = h01 * (1 - fy) + (h23 * fy);
+      if(x == 800 && y == 800){
+        console.log("ix = " + ix + ", iy = " + iy);
+        console.log("spacing x = " + spacing_x + ", spacing y = " + spacing_y);
+        console.log("nearest vertex = " + (ix*spacing_x) + ", " + (iy*spacing_y));
+        console.log("fx = " + fx + ", fy = " + fy);
+        console.log("Vertex index = " + vertex);
       
-      /*console.log("ix = " + ix + ", iy = " + iy);
-      console.log("spacing x = " + spacing_x + ", spacing y = " + spacing_y);
-      console.log("nearest vertex = " + (ix*spacing_x) + ", " + (iy*spacing_y));
-      console.log("fx = " + fx + ", fy = " + fy);
-      console.log("Vertex index = " + vertex);
-      
-      console.log("Height = " + h);*/
+        console.log("Height = " + h);
+      }
       return h;
     },
 
     init: function () {      
       var perlin_gen = new PerlinNoiseGenerator();
       //var perlinData =perlin_gen.generate(this.data.width_divisions, this.data.depth_divisions, 128, 5, 1.4);
-      this.heightMap = perlin_gen.generate2(512, 512, [128, 64, 32, 16], [1, 0.5, 0.25, 0.125]);      
+      this.heightMap = perlin_gen.generate2(this.data.width_divisions, this.data.depth_divisions, [128, 64, 32, 16, 8], [1, 0.5, 0.25, 0.125, 0.125/2]);      
       //fix the height map
       //for(var i = 0;i < this.heightMap.length; i++){
       //  this.heightMap[i] = (this.heightMap[i] * 255.0) | 0;//this.data.max_height;
@@ -234,23 +236,33 @@ AFRAME.registerComponent('terrain', {
       this.cameraEl = document.querySelector("a-camera");     
       var c = document.getElementById("canvas");
       var ctx = c.getContext("2d");
-      var imgData = ctx.createImageData(512, 512);      
+      //const image = document.getElementById('source');
+      //ctx.drawImage(image, 0, 0, 256, 256, 0, 0, 256, 256);
+      var imgData = ctx.createImageData(this.data.width_divisions, this.data.depth_divisions);      
       for (var i = 0; i < imgData.data.length; i += 4) {
           var p = this.heightMap[i / 4];
           var rgb = (p * 255) | 0;
 
-          //var px = (i/4) % 512;
-          //var py = ((i/4) / 512) | 0;
-          //px = px * (2 * Math.PI) / 512;
-          //py = py * (2 * Math.PI) / 512;
-          //rgb = 128 * Math.sin(px) * Math.sin(py);
-
-          //rgb = (px % 2) * (py % 2) * 128;
-
+          /*var px = (i/4) % 512;
+          var py = ((i/4) / 512) | 0;
+          if(px > 127 & py > 127){
+            this.heightMap[i/4] = 0;            
+          }else if(px == py) {
+            this.heightMap[i/4] = 1.0; 
+          }else{
+            px = px * (2 * Math.PI) / 512;
+            py = py * (2 * Math.PI) / 512;          
+            this.heightMap[i/4] = Math.abs(Math.sin(px) * Math.sin(py));
+          }
+          rgb = (255 * this.heightMap[i/4]) | 0;
+          //rgb = (px % 2) * (py % 2) * 128;*/
+          
           imgData.data[i+0] = rgb;
           imgData.data[i+1] = rgb;
           imgData.data[i+2] = rgb;
           imgData.data[i+3] = 255;
+          //this.heightMap[i/4] = imgData[i];
+          
       }
       
       ctx.putImageData(imgData, 0, 0);      
@@ -279,16 +291,18 @@ AFRAME.registerComponent('terrain', {
       var geo;
       var mesh; 
       //n chunks must be > chunk size
-      for(var j = 0; j < 17; j++){
-        for(var i = 0; i < 17; i++){
+      var n_chunks_x = this.data.width_divisions / 16;
+      var n_chunks_y = this.data.depth_divisions / 16;
+      for(var j = 0; j < n_chunks_y + 1; j++){
+        for(var i = 0; i < n_chunks_x + 1; i++){
           //console.log("Generating terrain chunk...");
           //console.log('j=', j);
-          geo = this.generateChunk((i* 16) - i, (j * 16) - j, 16, 16);
+          geo = this.generateChunk((i* n_chunks_x) - i, (j * n_chunks_y) - j, n_chunks_x, n_chunks_y);
           mesh = new THREE.Mesh(geo, this.material);
-          mesh.position.x = i * 1600/17;                                                    
+          mesh.position.x = i * this.data.width / (n_chunks_x + 1);                                                     
           mesh.position.y = 0;
-          mesh.position.z = j * 1600/17;
-          mesh.frustumCulled=false;
+          mesh.position.z = j * this.data.depth/ (n_chunks_y + 1);
+          //mesh.frustumCulled=false;
           //mesh.position.x*=1.1;
           //mesh.position.z*=1.1;
           this.el.object3D.add(mesh);
@@ -301,15 +315,30 @@ AFRAME.registerComponent('terrain', {
         console.dir(debug);
       
       //fix the height map
+      var maxh = 0;
+      var maxhi = 0;
       for(var i = 0;i < this.heightMap.length; i++){
-          this.heightMap[i] = this.heightMap[i] * this.data.max_height;
+          this.heightMap[i] *= this.data.max_height;
+          if(i > 32636 && i < 32642)console.log("h = " + i + ": " + this.heightMap[i] + ', max=' + this.data.max_height);
+          if(this.heightMap[i] > maxh){
+            maxh = this.heightMap[i];
+            maxhi = i;
+          }
         //this.heightMap[i] = 0;
       }
+
+      console.log("Map max height = " +  maxh + " at i = " + maxhi);
+      console.log("center height at 800,800 is " + this.getHeight(800,800));
+      //find and record the sea element
+      this.seaEl = this.el.sceneEl.querySelector('#sea');
     },
 
     tick: function(){
-      this.el.object3D.position.x = this.cameraEl.object3D.position.x - 800.0;
-      this.el.object3D.position.z = this.cameraEl.object3D.position.z - 800.0;
+      this.el.object3D.position.x = this.cameraEl.object3D.position.x - (this.data.width / 2);
+      this.el.object3D.position.z = this.cameraEl.object3D.position.z - (this.data.depth / 2);  
+      this.seaEl.object3D.position.x = this.cameraEl.object3D.position.x;
+      this.seaEl.object3D.position.z = this.cameraEl.object3D.position.z;
+      
     },
     
   });

@@ -20,8 +20,11 @@ AFRAME.registerComponent('forest', {
         geometry.vertices.push(new THREE.Vector3(x, y    , -w + z));     
         geometry.vertices.push(new THREE.Vector3(x, y    ,  w + z));     
         geometry.vertices.push(new THREE.Vector3(x, y + h,  w + z));
-        geometry.vertices.push(new THREE.Vector3(x, y + h, -w + z));     
-  
+        geometry.vertices.push(new THREE.Vector3(x, y + h, -w + z)); 
+        geometry.vertices.push(new THREE.Vector3(x-w, y + h, z - w));     
+        geometry.vertices.push(new THREE.Vector3(x+w, y + h,  z - w));     
+        geometry.vertices.push(new THREE.Vector3(x+w, y + h,  z + w));
+        geometry.vertices.push(new THREE.Vector3(x-w, y + h,  z + w)); 
         
         geometry.faces.push(new THREE.Face3(start_vertex + 0, start_vertex + 1, start_vertex + 2));
         geometry.faces.push(new THREE.Face3(start_vertex + 2, start_vertex + 3, start_vertex + 0));
@@ -51,7 +54,7 @@ AFRAME.registerComponent('forest', {
             var tx = Math.random() * terrain_w;
             var tz = Math.random() * terrain_h;
             var ty = terrain.components.terrain.getHeight(tx, tz);
-            if(ty > 120 && ty < 195){
+            if(ty > 120 && ty < 320){
                 n_trees_planted++;
                 //tree_pos.push({x: tx, y:h, z:ty});
                 var tree_height = this.data.height + (this.data.height_variation * (Math.random() - 0.5));
