@@ -5,15 +5,9 @@
     <title>John's Procedural Landscape</title>
     <meta name="Procedural landscapes generated using perlin noise and displayed in A-Frame" content="John's procedural landscapes">
     <script src="https://aframe.io/releases/0.9.0/aframe.min.js"></script>
-    <!--<script src="https://unpkg.com/aframe-physics-system@1.4.0/dist/aframe-physics-system.min.js"></script>-->
-    <!--<script src="https://unpkg.com/aframe-geometry-merger-component/dist/aframe-geometry-merger-component.min.js"></script> -->
-
+    
     <script src="scripts/perlin.js"></script>
-    <script src="scripts/a-frame-perlin-landscape.js"></script>  
-    <!--<script src="scripts/terrain-shader.js"></script>--> 
-    <script src="scripts/tree.js"></script>
-    <script src="scripts/textured-tree.js"></script>
-    <script src="scripts/grow-forest.js"></script>
+    <script src="scripts/a-frame-perlin-landscape.js"></script>          
     <script src="scripts/instanced-material.js"></script>
     <script src="scripts/forest.js"></script>
     <style>
@@ -49,9 +43,8 @@
     <a-scene light="defaultLightsEnabled: false" stats background="color: #ccddff" renderer="logarithmicDepthBuffer:auto;" perlin_map >
         <a-assets>
           
-        </a-assets>
-        <!--<a-camera id="camera" camera="near:0.05;far:5000;" position="800 300 800" wasd-controls="acceleration:8000;enabled:true;fly:true;" look>-->
-        <a-camera id="camera" camera="near:0.05;far:6400;" position="0 600 0" wasd-controls="acceleration:10000;enabled:true;fly:true;" rotation="0 180 0">
+        </a-assets>      
+        <a-camera id="camera" camera="near:0.05;far:6400;" position="0 700 300" wasd-controls="acceleration:10000;enabled:true;fly:true;" rotation="0 180 0">
           <a-cursor id="cursor" color="black"></a-cursor>
         </a-camera>
         
@@ -63,17 +56,15 @@
         <a-entity forest="terrain_id:terrain;treecount:4000;width:10;height:30;height_variation:3;" instanced-material="texture:assets/tree1.png;alpha:assets/tree1-alpha.png;" position="-2400 0 -2400" ></a-entity>
         <a-entity forest="terrain_id:terrain;treecount:4000;width:12;height:36;height_variation:3;" instanced-material="texture:assets/tree3.png;alpha:assets/tree3-alpha.png;" position="-2400 0 -2400" ></a-entity>
 
-        <a-sphere color="red" radius="50" position="-2400 600 -2400"></a-sphere>
-        <a-sphere color="blue" radius="50" position="2400 600 -2400"></a-sphere>
-        <a-sphere color="yellow" radius="50" position="-2400 600 2400"></a-sphere>
-        <a-sphere color="yellow" radius="50" position="2400 600 2400"></a-sphere>
-        <a-sphere color="green" radius="50" position="0 600 0"></a-sphere>
-        <a-sphere color="white" radius="50" position="0 600 2400"></a-sphere>
 
-
-        
-        <!--<a-entity forest="terrain_id:terrain;treecount:4000;width:6;height:18;height_variation:3;" instanced-material="texture:assets/tree3.png;alpha:assets/tree3-alpha.png;" position="0 0 0" ></a-entity>-->
-        
+        <!-- Axes and boundary markers for use during development-->
+        <a-box color="yellow" width="10" depth="10" height="1200" position="-2400 600 -2400"></a-box>
+        <a-box color="yellow" width="10" depth="10" height="1200" position="2400 600 -2400"></a-box>
+        <a-box color="yellow" width="10" depth="10" height="1200" position="-2400 600 2400"></a-box>
+        <a-box color="yellow" width="10" depth="10" height="1200" position="2400 600 2400"></a-box>
+        <a-box color="red"  width="10" depth="10" height="200" position="0 600 100" rotation="90 0 0"></a-box>
+        <a-box color="green"  width="10" depth="10" height="200" position="100 600 0" rotation="0 0 -90"></a-box>
+        <a-box color="white" width="10" depth="10" height="200" position="0 700 0"></a-box>
       </a-scene>
       
      
