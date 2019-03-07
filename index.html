@@ -10,6 +10,7 @@
     <script src="scripts/a-frame-perlin-landscape.js"></script>          
     <script src="scripts/instanced-material.js"></script>
     <script src="scripts/forest.js"></script>
+    <script src="scripts/sun-mover.js"></script>
     <style>
       a-scene{
         width:800px;
@@ -48,7 +49,7 @@
           <a-cursor id="cursor" color="black"></a-cursor>
         </a-camera>
         
-        <a-entity id="light" light="type: directional; color: #FFFFDD; intensity: 1.0;direction:1 0.20 0" position="1 1 0"></a-entity>        
+        <a-entity id="sun" sun-mover light="type: directional; color: #FFFFDD; intensity: 1.0" position="1 0 0"></a-entity>        
         <a-entity id="terrain" position="0 0 0" terrain="width: 4800; depth: 4800;max_height:600;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" ></a-entity>
         <a-plane  id="sea" height="4800" width="4800" rotation="-90 0 0" position="0 100 0" material="color:blue" ></a-plane>-
         

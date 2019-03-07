@@ -44,7 +44,7 @@ void main() {
 
 
   vec4 height = texture2D(heightmap, hUV) * max_height;
-  vUv = hUV * 15.0;
+  vUv = hUV * 50.0;
   //vPosition.y = height.r;
   vPosition += vec3(-rx, height.r - (max_height / 2.0), -rz);
   gl_Position = projectionMatrix * modelViewMatrix * vec4( vPosition, 1.0 );
@@ -426,11 +426,16 @@ AFRAME.registerComponent('terrain', {
     },
 
     tick: function(){
+      
       this.el.object3D.position.x = this.cameraEl.object3D.position.x - (this.data.width / 2);
       this.el.object3D.position.z = this.cameraEl.object3D.position.z - (this.data.depth / 2);  
       this.seaEl.object3D.position.x = this.cameraEl.object3D.position.x;
       this.seaEl.object3D.position.z = this.cameraEl.object3D.position.z;
-      
+
+      var h = this.getHeight(this.cameraEl.object3D.position.x + (this.data.width / 2), this.cameraEl.object3D.position.z + (this.data.depth / 2));
+      if(this.cameraEl.object3D.position.y < h){
+        this.cameraEl.object3D.position.set(this.cameraEl.object3D.position.x, h + 25, this.cameraEl.object3D.position.z);
+      }
     },
     
   });
