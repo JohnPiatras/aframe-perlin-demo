@@ -1,8 +1,13 @@
+// references for lighting
+// https://stackoverflow.com/questions/37342114/three-js-shadermaterial-lighting-not-working
+// https://stackoverflow.com/questions/30151086/threejs-how-do-i-make-a-custom-shader-be-lit-by-the-scenes-lights
+// https://stackoverflow.com/questions/35596705/using-lights-in-three-js-shader
 const vertexShader = `
 precision highp float;
 varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vPosition;
+
 uniform sampler2D heightmap;
 uniform sampler2D normalmap;
 uniform float max_height;
@@ -27,7 +32,7 @@ void main() {
 
   //fix vertex world x and z to integer multiples of 1600 / 255
   //
-  float space = 3200.0 / 255.0;
+  float space = 4800.0 / 255.0;
   float ix = floor(wx / space) * space;
   float iz = floor(wz / space) * space;
   //get remainder parts to use to displace vertex x and z
@@ -35,7 +40,7 @@ void main() {
   float rz = wz - iz;
   
 
-  vec2 hUV = vec2(ix/3200.0, -iz/3200.0) + vec2(0.5, 0.5);
+  vec2 hUV = vec2(ix/4800.0, -iz/4800.0) + vec2(0.5, 0.5);
 
 
   vec4 height = texture2D(heightmap, hUV) * max_height;
@@ -44,12 +49,26 @@ void main() {
   vPosition += vec3(-rx, height.r - (max_height / 2.0), -rz);
   gl_Position = projectionMatrix * modelViewMatrix * vec4( vPosition, 1.0 );
   vNormal = texture2D(normalmap, hUV).rgb;
+  //transform vertex normal to camera space as direction lights will be in cam space in frag shader
+  vNormal = normalMatrix * vNormal;
+
 }
 `;
 
 
 
 const fragmentShader = `
+#if (NUM_DIR_LIGHTS > 0)
+struct DirectionalLight {
+  vec3 direction;
+  vec3 color;
+  int shadow;
+	float shadowBias;
+	float shadowRadius;
+	vec2 shadowMapSize;
+};
+uniform DirectionalLight directionalLights[ NUM_DIR_LIGHTS ];
+#endif
 
 uniform sampler2D texture;
 uniform sampler2D rock_texture;
@@ -60,38 +79,33 @@ varying vec2 vUv;
 
 vec3 heightblend(vec3 color1, vec3 color2, float vertexHeight, float transitionHeight, float blendDistance)
 {    
-    
     float level2 = clamp((vertexHeight - (transitionHeight - blendDistance)) / (transitionHeight - (transitionHeight - blendDistance)), 0.0, 1.0);    
     float level1 = 1.0 - level2;
     return (color1 * level1) + (color2 * level2);
 }
 
 void main() {
-    vec3 light = vec3(0.5, 0.25, 1.0);
+    vec3 light = vec3(1.0, 0.5, 0.0);
     light = normalize(light);
 
-    float dProd = 0.5 + 0.5 * max(0.0, dot(vNormal, light));
+    float dProd = 1.0;//0.5 + 0.5 * max(0.0, dot(vNormal, light));
     
     vec3 blend0 = heightblend( texture2D(sand_texture, vUv).rgb, texture2D(texture, vUv).rgb , vPosition.y, 120.0, 10.0);
     vec3 blend1 = heightblend( blend0, texture2D(rock_texture, vUv).rgb , vPosition.y, 350.0, 30.0);
     vec3 blend2 = heightblend( blend1, vec3(1.0, 1.0, 1.0) , vPosition.y, 500.0, 15.0);
-    gl_FragColor = vec4(dProd * blend2, 1.0);
-
-    //green - x axis
-    //blue y axis
-
-    float x = abs(vUv.x) - floor(abs(vUv.x));
-    float y = abs(vUv.y) - floor(abs(vUv.y));
-    /*if(x < 0.01 || y < 0.01){      
-        gl_FragColor = vec4(x, y, 0.0, 1.0);      
-    }else{
-        vec3 c = vec3(vUv.x, vUv.y, 0.0);
-        vec3 c2 = vec3(dProd * blend2);
-        vec3 f = (0.25 * c) + (0.75 * c2);
-        //gl_FragColor = vec4(f, 1.0);
-    }*/
-      
-
+    
+    gl_FragColor = dProd * vec4(blend2, 1.0);
+  
+#if (NUM_DIR_LIGHTS > 0)
+    vec3 addlights = vec3(0.0, 0.0, 0.0);
+    
+    for(int i = 0; i < NUM_DIR_LIGHTS; i++) {
+        DirectionalLight directLight = directionalLights[i];
+        vec3 direction = directLight.direction;// - vPosition;
+        addlights += clamp(dot(direction.xyz, vNormal), 0.0, 1.0) * directLight.color;     
+    }
+    gl_FragColor = vec4(addlights * blend2, 1.0);
+#endif
 }
 `;
 
@@ -327,14 +341,6 @@ AFRAME.registerComponent('terrain', {
           }
           normal.normalize();
 
-          /*if(ix == 0 && iy == 1){
-            console.log("ix = " + ix + ", iy = " + iy);
-            console.table(vertex_indices);
-            console.table(vertices);
-            console.log("Normal:");
-            console.table(normal);
-
-          }*/
           imgData.data[i+0] = (normal.x * 255) | 0;
           imgData.data[i+1] = (normal.y * 255) | 0;
           imgData.data[i+2] = (normal.z * 255) | 0;
@@ -345,8 +351,7 @@ AFRAME.registerComponent('terrain', {
 
     },
 
-    init: function () {  
-      
+    init: function () {        
       //sets up this.heightMap and this.heightMapCanvas
       this.generateHeightMap();
       this.generateNormalMap();
@@ -360,20 +365,32 @@ AFRAME.registerComponent('terrain', {
       heightmap.wrapT = heightmap.wrapS = THREE.RepeatWrapping;
       var normalmap = new THREE.CanvasTexture(this.normalMapCanvas);
       normalmap.wrapT = normalmap.wrapS = THREE.RepeatWrapping;
-
+      
+      var uniforms = {     
+        texture: { type: "t", value: null },
+        rock_texture: { type: "t", value: null },
+        sand_texture: { type: "t", value: null },
+        heightmap: { type: "t", value: heightmap},
+        normalmap: { type: "t", value: normalmap},
+        max_height: { type: "f", value: this.data.max_height},        
+      };
+      uniforms = THREE.UniformsUtils.merge( [
+        THREE.UniformsLib[ "lights" ],
+        uniforms
+      ] );
+      //textures get removed during the uniform merge so I set these here rather than above
+      uniforms.texture.value = texture;
+      uniforms.rock_texture.value = rock_texture;
+      uniforms.sand_texture.value = sand_texture;
+    
+      console.dir(uniforms);
+          
       this.material  = new THREE.ShaderMaterial({
-        uniforms: {          
-          texture: { type: "t", value: texture },
-          rock_texture: { type: "t", value: rock_texture },
-          sand_texture: { type: "t", value: sand_texture },
-          heightmap: { type: "t", value: heightmap},
-          normalmap: { type: "t", value: normalmap},
-          max_height: { type: "float", value: this.data.max_height}
-        },
+        uniforms: uniforms,
         vertexShader,
-        fragmentShader
+        fragmentShader,
+        lights:true
       });
-      //this.material = new THREE.MeshBasicMaterial({ wireframe:true, color: "green"});
 
       var geo;
       var mesh; 
@@ -398,18 +415,14 @@ AFRAME.registerComponent('terrain', {
         }     
       }     
     
-      if(debug.do)
-        console.dir(debug);
-      
-      //fix the height map
-      var maxh = 0;
-      var maxhi = 0;
-      
-
-      console.log("Map max height = " +  maxh + " at i = " + maxhi);
-      console.log("center height at 800,800 is " + this.getHeight(800,800));
       //find and record the sea element
       this.seaEl = this.el.sceneEl.querySelector('#sea');
+      
+      
+    },
+
+    update: function(){
+      
     },
 
     tick: function(){
