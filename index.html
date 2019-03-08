@@ -11,6 +11,7 @@
     <script src="scripts/instanced-material.js"></script>
     <script src="scripts/forest.js"></script>
     <script src="scripts/sun-mover.js"></script>
+    <script src="scripts/debug-helpers.js"></script>
     <style>
       a-scene{
         width:800px;
@@ -41,7 +42,7 @@
                src="assets/test.png"
                width="512" height="512">
       </div>
-    <a-scene light="defaultLightsEnabled: false" stats background="color: #ccddff" renderer="logarithmicDepthBuffer:auto;" perlin_map >
+    <a-scene shadow="type:basic" light="defaultLightsEnabled: false;" stats background="color: #ccddff" renderer="logarithmicDepthBuffer:auto;" perlin_map >
         <a-assets>
           
         </a-assets>      
@@ -49,8 +50,8 @@
           <a-cursor id="cursor" color="black"></a-cursor>
         </a-camera>
         
-        <a-entity id="sun" sun-mover light="type: directional; color: #FFFFDD; intensity: 1.0" position="1 0 0"></a-entity>        
-        <a-entity id="terrain" position="0 0 0" terrain="width: 4800; depth: 4800;max_height:600;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" ></a-entity>
+        <a-entity id="sun" sun-mover  position="-1000 0 0" light="type: directional; color: #FFFFDD; intensity: 1.0;castShadow:true;shadowCameraVisible:true;shadowCameraLeft:-5000;shadowCameraRight:500;shadowCameraTop:500;shadowCameraBottom:-500;shadowCameraFar:2000"></a-entity>        
+        <a-entity id="terrain" position="0 0 0" terrain="width: 4800; depth: 4800;max_height:600;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" shadow="receive:true;cast:false"></a-entity>
         <a-plane  id="sea" height="4800" width="4800" rotation="-90 0 0" position="0 100 0" material="color:blue" ></a-plane>-
         
         <a-entity forest="terrain_id:terrain;treecount:4000;width:5;height:15;height_variation:3;" instanced-material="texture:assets/tree2.png;alpha:assets/tree2-alpha.png;" position="-2400 0 -2400" ></a-entity>
@@ -58,14 +59,7 @@
         <a-entity forest="terrain_id:terrain;treecount:4000;width:12;height:36;height_variation:3;" instanced-material="texture:assets/tree3.png;alpha:assets/tree3-alpha.png;" position="-2400 0 -2400" ></a-entity>
 
 
-        <!-- Axes and boundary markers for use during development-->
-        <a-box color="yellow" width="10" depth="10" height="1200" position="-2400 600 -2400"></a-box>
-        <a-box color="yellow" width="10" depth="10" height="1200" position="2400 600 -2400"></a-box>
-        <a-box color="yellow" width="10" depth="10" height="1200" position="-2400 600 2400"></a-box>
-        <a-box color="yellow" width="10" depth="10" height="1200" position="2400 600 2400"></a-box>
-        <a-box color="red"  width="10" depth="10" height="200" position="0 600 100" rotation="90 0 0"></a-box>
-        <a-box color="green"  width="10" depth="10" height="200" position="100 600 0" rotation="0 0 -90"></a-box>
-        <a-box color="white" width="10" depth="10" height="200" position="0 700 0"></a-box>
+        <!--<a-entity debug-helpers></a-entity>-->
       </a-scene>
       
      

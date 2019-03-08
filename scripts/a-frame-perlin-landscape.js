@@ -383,7 +383,7 @@ AFRAME.registerComponent('terrain', {
       uniforms.rock_texture.value = rock_texture;
       uniforms.sand_texture.value = sand_texture;
     
-      console.dir(uniforms);
+      //console.dir(uniforms);
           
       this.material  = new THREE.ShaderMaterial({
         uniforms: uniforms,
