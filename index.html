@@ -5,46 +5,63 @@
     <title>John's Procedural Landscape</title>
     <meta name="Procedural landscapes generated using perlin noise and displayed in A-Frame" content="John's procedural landscapes">
     <script src="https://aframe.io/releases/0.9.0/aframe.min.js"></script>
-    <!--<script src="https://unpkg.com/aframe-physics-system@1.4.0/dist/aframe-physics-system.min.js"></script>-->
-    <script src="https://unpkg.com/aframe-geometry-merger-component/dist/aframe-geometry-merger-component.min.js"></script> 
-
+    
     <script src="scripts/perlin.js"></script>
-    <script src="scripts/a-frame-perlin-landscape.js"></script>  
-    <!--<script src="scripts/terrain-shader.js"></script>--> 
-    <script src="scripts/tree.js"></script>
-    <script src="scripts/textured-tree.js"></script>
-    <script src="scripts/grow-forest.js"></script>
+    <script src="scripts/a-frame-perlin-landscape.js"></script>          
     <script src="scripts/instanced-material.js"></script>
     <script src="scripts/forest.js"></script>
+    <script src="scripts/sun-mover.js"></script>
+    <script src="scripts/debug-helpers.js"></script>
+    <style>
+      a-scene{
+        width:800px;
+        height:600px;
+      }
+      #heightcanvas{        
+        position:absolute;
+        width:256px;
+        height:256px;        
+        left:850px;
+        top:0px;        
+      }
+      #normcanvas{        
+        position:absolute;
+        width:256px;
+        height:256px;                
+        left:850px;
+        top:260px;
+      }
+    </style>
 
   </head>
   <body>
-    <a-scene stats background="color: #ccddff" renderer="logarithmicDepthBuffer:auto;">
+      <canvas id="heightcanvas" width='256' height='256'></canvas>
+      <canvas id="normcanvas" width='256' height='256'></canvas>
+      <div style="display:none;">
+          <img id="source"
+               src="assets/test.png"
+               width="512" height="512">
+      </div>
+    <a-scene shadow="type:basic" light="defaultLightsEnabled: false;" stats background="color: #ccddff" renderer="logarithmicDepthBuffer:auto;" perlin_map >
         <a-assets>
-
-        </a-assets>
-        <!--<a-camera id="camera" camera="near:0.05;far:2000;" position="800 300 800" wasd-controls="acceleration:6000;enabled:true;fly:true;" look>-->
-        <a-camera id="camera" camera="near:0.05;far:2000;" position="800 300 800" wasd-controls="acceleration:6000;enabled:true;fly:true;" look>
+          
+        </a-assets>      
+        <a-camera id="camera" camera="near:0.05;far:6400;" position="0 700 300" wasd-controls="acceleration:10000;enabled:true;fly:true;" rotation="0 180 0">
           <a-cursor id="cursor" color="black"></a-cursor>
         </a-camera>
-        <a-light type="point" color="white" position="800 1000 800"></a-light>
-         
-        <!--<a-entity id="terrain" position="0 0 0" terrain="width: 1600; depth: 1600;max_height:300;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" terrain-shader="color:darkgreen;"></a-entity>-->
-        <a-entity id="terrain" position="0 0 0" terrain="width: 1600; depth: 1600;max_height:300;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" ></a-entity>
         
-        <a-plane  id="sea" height="1600" width="1600" rotation="-90 0 0" position="800 100 800" material="color:blue" ></a-plane>
-        <!--<a-entity instanced-material="texture:assets/tree2.png;alpha:assets/tree2-alpha.png;" textured-tree  position="800 300 780" ></a-entity>-->
-        <!--
-        <a-entity grow-forest="terrain_id:terrain;geomerger_id:forest;treecount:5000;texture:assets/tree2.png;alpha:assets/tree2-alpha.png;width:5;height:20;height_variation:10;"></a-entity>
-        <a-entity grow-forest="terrain_id:terrain;geomerger_id:forest;treecount:5000;texture:assets/tree1.png;alpha:assets/tree1-alpha.png;width:10;height:30;height_variation:3;"></a-entity>
-        <a-entity grow-forest="terrain_id:terrain;geomerger_id:forest;treecount:5000;texture:assets/tree3.png;alpha:assets/tree3-alpha.png;width:12;height:36;height_variation:3;"></a-entity>
-        -->
+        <a-entity id="sun" sun-mover  position="-1000 0 0" light="type: directional; color: #FFFFDD; intensity: 1.0;castShadow:true;shadowCameraVisible:true;shadowCameraLeft:-5000;shadowCameraRight:500;shadowCameraTop:500;shadowCameraBottom:-500;shadowCameraFar:2000"></a-entity>        
+        <a-entity id="terrain" position="0 0 0" terrain="width: 4800; depth: 4800;max_height:600;width_divisions:256;depth_divisions:256;" material="wireframe:false;color:darkgreen" shadow="receive:true;cast:false"></a-entity>
+        <a-plane  id="sea" height="4800" width="4800" rotation="-90 0 0" position="0 100 0" material="color:blue" ></a-plane>-
         
-        <a-entity forest="terrain_id:terrain;treecount:4000;width:10;height:25;height_variation:8;" instanced-material="texture:assets/tree1.png;alpha:assets/tree1-alpha.png;" position="0 0 0" ></a-entity>
-        <a-entity forest="terrain_id:terrain;treecount:4000;width:5;height:15;height_variation:3;" instanced-material="texture:assets/tree2.png;alpha:assets/tree2-alpha.png;" position="0 0 0" ></a-entity>
-        <a-entity forest="terrain_id:terrain;treecount:4000;width:6;height:18;height_variation:3;" instanced-material="texture:assets/tree3.png;alpha:assets/tree3-alpha.png;" position="0 0 0" ></a-entity>
-        
+        <a-entity forest="terrain_id:terrain;treecount:4000;width:5;height:15;height_variation:3;" instanced-material="texture:assets/tree2.png;alpha:assets/tree2-alpha.png;" position="-2400 0 -2400" ></a-entity>
+        <a-entity forest="terrain_id:terrain;treecount:4000;width:10;height:30;height_variation:3;" instanced-material="texture:assets/tree1.png;alpha:assets/tree1-alpha.png;" position="-2400 0 -2400" ></a-entity>
+        <a-entity forest="terrain_id:terrain;treecount:4000;width:12;height:36;height_variation:3;" instanced-material="texture:assets/tree3.png;alpha:assets/tree3-alpha.png;" position="-2400 0 -2400" ></a-entity>
+
+
+        <!--<a-entity debug-helpers></a-entity>-->
       </a-scene>
+      
      
   </body>
 </html>

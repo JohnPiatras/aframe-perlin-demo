@@ -19,7 +19,7 @@ AFRAME.registerComponent('instanced-material', {
             console.log("Loading and caching " + texture_name + " and " + alpha_name);
             var texture = new THREE.TextureLoader().load( texture_name );
             var alpha =  new THREE.TextureLoader().load( alpha_name );
-            material = new THREE.MeshStandardMaterial({side:THREE.DoubleSide, map:texture, alphaMap:alpha, transparent:true,alphaTest:0.5});  
+            material = new THREE.MeshLambertMaterial({ map:texture, alphaMap:alpha, transparent:true,alphaTest:0.5});  
             tex_list[k] = material;            
         }else{
             material = tex_list[k];            
