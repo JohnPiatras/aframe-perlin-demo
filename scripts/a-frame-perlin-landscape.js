@@ -20,8 +20,8 @@ void main() {
   float position_y = modelMatrix[3][1];
   
   float position_z = modelMatrix[3][2];
-  float a = position_x / (3200.0/2.55);
-  float b = position_z / (3200.0/2.55);
+  float a = position_x / (4800.0/2.55);
+  float b = position_z / (4800.0/2.55);
   a = fract(a);
   b = fract(b);
   vUv = uv + vec2(a, b);
@@ -40,13 +40,12 @@ void main() {
   float rz = wz - iz;
   
 
-  vec2 hUV = vec2(ix/4800.0, -iz/4800.0) + vec2(0.5, 0.5);
-
-
+  vec2 hUV = vec2(ix/4800.0, iz/4800.0);// + vec2(0.5, 0.5);
+  
   vec4 height = texture2D(heightmap, hUV) * max_height;
   vUv = hUV * 50.0;
   //vPosition.y = height.r;
-  vPosition += vec3(-rx, height.r - (max_height / 2.0), -rz);
+  vPosition += vec3(-rx, height.r, -rz);
   gl_Position = projectionMatrix * modelViewMatrix * vec4( vPosition, 1.0 );
   vNormal = texture2D(normalmap, hUV).rgb;
   //transform vertex normal to camera space as direction lights will be in cam space in frag shader
@@ -106,6 +105,8 @@ void main() {
     }
     gl_FragColor = vec4(addlights * blend2, 1.0);
 #endif
+
+  
 }
 `;
 
@@ -145,7 +146,8 @@ AFRAME.registerComponent('terrain', {
     //generates a chunk of terrain geometry
     generateChunk: function(start_x, start_y, chunk_width, chunk_depth){
       var geometry = new THREE.Geometry();      
-      
+      var points = [];
+      var centroid = {x:0, y:0, z:0, min:null, max:0, p:[]};
       var spacing_x = (this.data.width / ((this.data.width_divisions / chunk_width) + 1)) / (chunk_width - 1);
       var spacing_y = (this.data.depth / ((this.data.depth_divisions / chunk_depth) + 1)) / (chunk_depth - 1);
       //var spacing_x = this.data.width / this.data.width_divisions;//(this.data.width / ((this.data.width_divisions / chunk_width) + 1)) / (chunk_width - 1);
@@ -154,8 +156,24 @@ AFRAME.registerComponent('terrain', {
       //console.log("start y = " + start_y);
       for(var y = start_y; y < chunk_depth + start_y; y++){        
         for(var x = start_x; x < chunk_width + start_x; x++){                    
-          //console.log(x+", "+y)          
-          geometry.vertices.push(new THREE.Vector3((x - start_x) * spacing_x, this.data.max_height / 2 , (y - start_y) * spacing_y));          
+          //console.log(x+", "+y)   
+          var p = {
+            x: (x - start_x) * spacing_x,
+            y: 0,
+            z: (y - start_y) * spacing_y
+          };  
+          p.y = this.getHeight(x * spacing_x, y * spacing_y);
+          centroid.x += p.x;
+          centroid.y += p.y;
+          centroid.z += p.z;
+          centroid.p.push(p);
+          if(centroid.min==null)
+            centroid.min = p.y;
+          else
+            centroid.min = Math.min(p.y, centroid.min);
+          centroid.max = Math.max(p.y, centroid.max);
+          points.push(p);     
+          geometry.vertices.push(new THREE.Vector3(p.x, 0 , p.z));          
           if(debug.do){
             debug.recordxy((x - start_x) * spacing_x, (y - start_y) * spacing_y);
 
@@ -178,18 +196,42 @@ AFRAME.registerComponent('terrain', {
           geometry.faces.push(new THREE.Face3(i + chunk_width, i + chunk_width + 1, i + 1));
           geometry.faceVertexUvs[0].push( [new THREE.Vector2(u, nv), new THREE.Vector2(nu, v), new THREE.Vector2(u,v)] );  
           geometry.faceVertexUvs[0].push( [new THREE.Vector2(u,nv), new THREE.Vector2(nu,nv), new THREE.Vector2(nu, v)] );                                
-
-        }
-
-        
+        }  
       }
 
-      //console.log("u=" + u + ", v=" + v);
       geometry.mergeVertices();
       geometry.computeFaceNormals();
       geometry.computeVertexNormals();
-      geometry.computeBoundingBox();      
-      return geometry;
+      
+      //compute bounding sphere
+      // This would work except our geometry will change depending
+      // on where the camera is
+      /*centroid.x /= points.length;
+      centroid.y /= points.length;
+      centroid.z /= points.length;
+      var radius = 0;
+      for( var i = 0; i < points.length; i++){
+        r = Math.sqrt( 
+          ((points[i].x - centroid.x) ** 2) +
+          ((points[i].y - centroid.y) ** 2) +
+          ((points[i].z - centroid.z) ** 2)
+        );
+        radius = Math.max(radius, r);
+      }*/
+      
+      centroid.x = chunk_width * spacing_x / 2;      
+      centroid.z = chunk_depth * spacing_y / 2;
+      centroid.y = this.data.max_height / 2;
+      radius = Math.sqrt(centroid.x ** 2 + centroid.y **2 + centroid.z **2);      
+      
+      var bufGeometry =  new THREE.BufferGeometry().fromGeometry(geometry);
+      bufGeometry.boundingSphere = {
+        radius: radius,
+        center: centroid
+      };
+      
+      
+      return bufGeometry;
     },
 
     getWidth: function(){
@@ -203,6 +245,8 @@ AFRAME.registerComponent('terrain', {
     getHeight: function(x, y){
       var w = this.data.width;
       var d = this.data.depth;
+      x = ((x % w) + w) % w;
+      y = ((y % d) + d) % d;
       var w_div = this.data.width_divisions;
       var d_div = this.data.depth_divisions;
       var spacing_x = w / (w_div - 1);
@@ -241,39 +285,33 @@ AFRAME.registerComponent('terrain', {
     // as an array for use in getting height later and as a canvas context to
     //be used as a texture
     generateHeightMap: function(){
-      var perlin_gen = new PerlinNoiseGenerator();
-      //var perlinData =perlin_gen.generate(this.data.width_divisions, this.data.depth_divisions, 128, 5, 1.4);
+      var perlin_gen = new PerlinNoiseGenerator();      
       this.heightMap = perlin_gen.generate2(this.data.width_divisions, this.data.depth_divisions, [128, 64, 32, 16, 8], [1, 0.5, 0.25, 0.125, 0.125/2]);      
       
-      var scene = this.el.sceneEl;
-      this.cameraEl = document.querySelector("a-camera");     
+      var mapDim = {
+        x: this.data.width_divisions,
+        y: this.data.depth_divisions,
+      }
+      
       this.heightMapCanvas = document.getElementById("heightcanvas");
       var ctx = this.heightMapCanvas.getContext("2d");
-      var imgData = ctx.createImageData(this.data.width_divisions, this.data.depth_divisions);      
-      for (var i = 0; i < imgData.data.length; i += 4) {
+
+      var imgData = ctx.createImageData(mapDim.x, mapDim.y);      
+      for (var i = 0; i < imgData.data.length; i += 4) {          
+          var px = (i/4) % mapDim.x;
+          var py = ((i/4) / mapDim.x) | 0;
           var p = this.heightMap[i / 4];
           var rgb = (p * 255) | 0;
-
-          /*var px = (i/4) % 512;
-          var py = ((i/4) / 512) | 0;
-          if(px > 127 & py > 127){
-            this.heightMap[i/4] = 0;            
-          }else if(px == py) {
-            this.heightMap[i/4] = 1.0; 
-          }else{
-            px = px * (2 * Math.PI) / 512;
-            py = py * (2 * Math.PI) / 512;          
-            this.heightMap[i/4] = Math.abs(Math.sin(px) * Math.sin(py));
-          }
-          rgb = (255 * this.heightMap[i/4]) | 0;
-          //rgb = (px % 2) * (py % 2) * 128;*/
-          
-          imgData.data[i+0] = rgb;
-          imgData.data[i+1] = rgb;
-          imgData.data[i+2] = rgb;
-          imgData.data[i+3] = 255;
-          //this.heightMap[i/4] = imgData[i];
-          
+          //our canvas and therefore the texture is upside down relative to the 
+          //orientation we store the height values in so we calculate a new img
+          //index that flips the heightmap vertically.
+          var img_index = (mapDim.x * ((mapDim.y - 1) - py)) + px;
+          img_index *= 4;
+                    
+          imgData.data[img_index+0] = rgb;
+          imgData.data[img_index+1] = rgb;
+          imgData.data[img_index+2] = rgb;
+          imgData.data[img_index+3] = 255;                    
       }
 
       for(var i = 0;i < this.heightMap.length; i++){
@@ -299,8 +337,12 @@ AFRAME.registerComponent('terrain', {
       var imgData = ctx.createImageData(this.data.width_divisions, this.data.depth_divisions);      
       for (var i = 0; i < imgData.data.length; i += 4) {
           var v_index = i / 4; //current vertex index                     
-          var ix = v_index % this.data.width_divisions;
-          var iy = (v_index / this.data.width_divisions) | 0;
+          var ix = v_index % mapDim.x;
+          var iy = (v_index / mapDim.x) | 0;
+          
+          var img_index = (mapDim.x * ((mapDim.y - 1) - iy)) + ix;
+          img_index *= 4;
+
           var curVertex = new THREE.Vector3(0,0,0);
           curVertex.x = ix * vertexSpacing.x;
           curVertex.y = this.heightMap[ix + iy * mapDim.y];
@@ -341,10 +383,10 @@ AFRAME.registerComponent('terrain', {
           }
           normal.normalize();
 
-          imgData.data[i+0] = (normal.x * 255) | 0;
-          imgData.data[i+1] = (normal.y * 255) | 0;
-          imgData.data[i+2] = (normal.z * 255) | 0;
-          imgData.data[i+3] = 255;                    
+          imgData.data[img_index+0] = (normal.x * 255) | 0;
+          imgData.data[img_index+1] = (normal.y * 255) | 0;
+          imgData.data[img_index+2] = (normal.z * 255) | 0;
+          imgData.data[img_index+3] = 255;                    
       }
       
       ctx.putImageData(imgData, 0, 0);   
@@ -370,8 +412,8 @@ AFRAME.registerComponent('terrain', {
         texture: { type: "t", value: null },
         rock_texture: { type: "t", value: null },
         sand_texture: { type: "t", value: null },
-        heightmap: { type: "t", value: heightmap},
-        normalmap: { type: "t", value: normalmap},
+        heightmap: { type: "t", value: null},
+        normalmap: { type: "t", value: null},
         max_height: { type: "f", value: this.data.max_height},        
       };
       uniforms = THREE.UniformsUtils.merge( [
@@ -382,7 +424,8 @@ AFRAME.registerComponent('terrain', {
       uniforms.texture.value = texture;
       uniforms.rock_texture.value = rock_texture;
       uniforms.sand_texture.value = sand_texture;
-    
+      uniforms.heightmap.value = heightmap;
+      uniforms.normalmap.value = normalmap;
       //console.dir(uniforms);
           
       this.material  = new THREE.ShaderMaterial({
@@ -401,18 +444,20 @@ AFRAME.registerComponent('terrain', {
         for(var i = 0; i < n_chunks_x + 1; i++){
           //console.log("Generating terrain chunk...");
           //console.log('j=', j);
-          geo = this.generateChunk((i* n_chunks_x) - i, (j * n_chunks_y) - j, n_chunks_x, n_chunks_y);
+          geo = this.generateChunk((i* n_chunks_x) - i, (j * n_chunks_y) - j, n_chunks_x, n_chunks_y);          
           mesh = new THREE.Mesh(geo, this.material);
           mesh.position.x = i * this.data.width / (n_chunks_x + 1);                                                     
           mesh.position.y = 0;
           mesh.position.z = j * this.data.depth/ (n_chunks_y + 1);
-          //mesh.frustumCulled=false;
+          mesh.frustumCulled=true;
           //mesh.position.x*=1.1;
           //mesh.position.z*=1.1;
+          
           this.el.object3D.add(mesh);
           
-
-        }     
+         // if(i > 1)break;
+        }   
+       // if(j>1)break;  
       }     
     
       //find and record the sea element
@@ -427,15 +472,41 @@ AFRAME.registerComponent('terrain', {
 
     tick: function(){
       
-      this.el.object3D.position.x = this.cameraEl.object3D.position.x - (this.data.width / 2);
-      this.el.object3D.position.z = this.cameraEl.object3D.position.z - (this.data.depth / 2);  
-      this.seaEl.object3D.position.x = this.cameraEl.object3D.position.x;
-      this.seaEl.object3D.position.z = this.cameraEl.object3D.position.z;
+      
+      
 
-      var h = this.getHeight(this.cameraEl.object3D.position.x + (this.data.width / 2), this.cameraEl.object3D.position.z + (this.data.depth / 2));
-      if(this.cameraEl.object3D.position.y < h){
-        this.cameraEl.object3D.position.set(this.cameraEl.object3D.position.x, h + 25, this.cameraEl.object3D.position.z);
-      }
+      this.do_tick();
     },
+
+    
+
+    do_tick: (function () {
+      var h = 0;
+      this.cameraEl = null;
+      
+      return function () {  
+        if(this.cameraEl == null){
+          this.cameraEl = document.querySelector("#camera");
+          return;
+        }
+          
+        this.el.object3D.position.x = this.cameraEl.object3D.position.x - (this.data.width / 2);
+        this.el.object3D.position.z = this.cameraEl.object3D.position.z - (this.data.depth / 2);  
+        this.seaEl.object3D.position.x = this.cameraEl.object3D.position.x;
+        this.seaEl.object3D.position.z = this.cameraEl.object3D.position.z;
+         
+
+
+        h = Math.max(
+          this.getHeight(this.cameraEl.object3D.position.x, this.cameraEl.object3D.position.z) + 10, 
+          this.seaEl.object3D.position.y + 10
+        );
+        if(this.cameraEl.object3D.position.y < h){
+          this.cameraEl.object3D.position.set(this.cameraEl.object3D.position.x, h, this.cameraEl.object3D.position.z);
+        }
+      };
+    })(),
+
+
     
   });

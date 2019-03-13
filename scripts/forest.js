@@ -80,8 +80,7 @@ AFRAME.registerComponent('forest', {
         geometry.mergeVertices();
         //geometry.computeFaceNormals();
         //geometry.computeVertexNormals();
-        geometry.computeBoundingBox();
-        this.geometry = geometry;   
+        this.geometry = new THREE.BufferGeometry().fromGeometry(geometry);   
                      
         this.material = new THREE.MeshLambertMaterial();
                 
