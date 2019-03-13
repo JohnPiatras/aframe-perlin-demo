@@ -145,9 +145,12 @@ AFRAME.registerComponent('terrain', {
 
     //generates a chunk of terrain geometry
     generateChunk: function(start_x, start_y, chunk_width, chunk_depth){
+      //declare some temporary vars just once, for reuse      
+      var t_point = {x:0, y:0, z:0};
+
       var geometry = new THREE.Geometry();      
       var points = [];
-      var centroid = {x:0, y:0, z:0, min:null, max:0, p:[]};
+      var centroid = {x:0, y:0, z:0};
       var spacing_x = (this.data.width / ((this.data.width_divisions / chunk_width) + 1)) / (chunk_width - 1);
       var spacing_y = (this.data.depth / ((this.data.depth_divisions / chunk_depth) + 1)) / (chunk_depth - 1);
       //var spacing_x = this.data.width / this.data.width_divisions;//(this.data.width / ((this.data.width_divisions / chunk_width) + 1)) / (chunk_width - 1);
@@ -157,40 +160,32 @@ AFRAME.registerComponent('terrain', {
       for(var y = start_y; y < chunk_depth + start_y; y++){        
         for(var x = start_x; x < chunk_width + start_x; x++){                    
           //console.log(x+", "+y)   
-          var p = {
+          /*var p = {
             x: (x - start_x) * spacing_x,
             y: 0,
             z: (y - start_y) * spacing_y
-          };  
-          p.y = this.getHeight(x * spacing_x, y * spacing_y);
-          centroid.x += p.x;
-          centroid.y += p.y;
-          centroid.z += p.z;
-          centroid.p.push(p);
-          if(centroid.min==null)
-            centroid.min = p.y;
-          else
-            centroid.min = Math.min(p.y, centroid.min);
-          centroid.max = Math.max(p.y, centroid.max);
-          points.push(p);     
-          geometry.vertices.push(new THREE.Vector3(p.x, 0 , p.z));          
-          if(debug.do){
-            debug.recordxy((x - start_x) * spacing_x, (y - start_y) * spacing_y);
-
-          }
+          }; */ 
+          t_point.x = (x - start_x) * spacing_x;
+          t_point.y = 0;
+          t_point.z = (y - start_y) * spacing_y;
+          t_point.y = this.getHeight(x * spacing_x, y * spacing_y);
+          centroid.x += t_point.x;
+          centroid.y += t_point.y;
+          centroid.z += t_point.z;             
+          geometry.vertices.push(new THREE.Vector3(t_point.x, 0, t_point.z));          
+          
         }
       }  
 
-      var v,nv,u,nu;
+      var v,nv,u,nu, i;
 
-      for(var y = 0; y < chunk_depth - 1; y++){        
-        var x_str = '';
+      for(var y = 0; y < chunk_depth - 1; y++){                
         v = (y + start_y) * 0.1;
         nv = v + 0.1;
         for(var x = 0; x < chunk_width - 1; x++){
           u = (x + start_x) * 0.1;
           nu = u + 0.1;      
-          var i = (y * chunk_width) + x;  
+          i = (y * chunk_width) + x;  
           
           geometry.faces.push(new THREE.Face3(i + chunk_width, i + 1, i ));          
           geometry.faces.push(new THREE.Face3(i + chunk_width, i + chunk_width + 1, i + 1));
