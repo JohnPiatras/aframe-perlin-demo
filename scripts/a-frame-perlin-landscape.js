@@ -4,6 +4,14 @@
 // https://stackoverflow.com/questions/35596705/using-lights-in-three-js-shader
 const vertexShader = `
 precision highp float;
+
+// terrain parameters
+uniform float max_height;
+uniform int width_divisions;
+uniform int depth_divisions;
+uniform float width;
+uniform float depth;
+
 varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vNormalCamSpace;
@@ -11,7 +19,7 @@ varying vec3 vPosition;
 
 uniform sampler2D heightmap;
 uniform sampler2D normalmap;
-uniform float max_height;
+
 void main() {
   vUv = uv;
   vNormal = normal;
@@ -124,11 +132,11 @@ void main() {
 
 AFRAME.registerComponent('terrain', {
     schema: {
-      width_divisions: {default: 128, min: 8},
-      depth_divisions: {default: 128, min: 8},
-      depth: {default: 100, min: 1},
-      width: {default: 100, min: 1},
-      max_height: {default: 10, min: 1},
+      width_divisions: {default: 256, min: 8},
+      depth_divisions: {default: 256, min: 8},
+      depth: {default: 4800, min: 1},
+      width: {default: 4800, min: 1},
+      max_height: {default: 1200, min: 1},
     },
 
     //generates a chunk of terrain geometry
@@ -364,7 +372,11 @@ AFRAME.registerComponent('terrain', {
         sand_texture: { type: "t", value: null },
         heightmap: { type: "t", value: null},
         normalmap: { type: "t", value: null},
-        max_height: { type: "f", value: this.data.max_height},        
+        max_height: { type: "f", value: this.data.max_height}, 
+        width_divisions: {type: 'f', value: this.data.width_divisions},
+        depth_divisions: {type: 'f', value: this.data.depth_divisions},
+        width: {type: 'f', value: this.data.width},
+        depth: {type: 'f', value: this.data.depth},       
       };
       uniforms = THREE.UniformsUtils.merge( [
         THREE.UniformsLib[ "lights" ],
