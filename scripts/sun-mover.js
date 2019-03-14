@@ -7,7 +7,7 @@ AFRAME.registerComponent('sun-mover', {
         this.light = scene.querySelector("#sun");
         console.log("being the sun...");
 
-        this.pause = false;
+        this.pause = true;
         self = this;
         window.addEventListener("keydown", function(e){
           if(e.keyCode === 32) { // e.g. v key

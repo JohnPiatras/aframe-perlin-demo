@@ -20,7 +20,7 @@ AFRAME.registerComponent('debug-helpers', {
         <a-plane width="200" height="200" position="0 0 0" rotation="-90 0 0" shadow></a-plane>
         `;
         var axes_entity = document.createElement("a-entity");
-        origin_h = 110;
+        //origin_h = 110;
         axes_entity.setAttribute('position', `0 ${origin_h} 0`);
         axes_entity.innerHTML = axes;        
         this.el.appendChild(axes_entity);

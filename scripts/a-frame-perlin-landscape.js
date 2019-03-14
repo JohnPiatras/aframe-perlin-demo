@@ -6,6 +6,7 @@ const vertexShader = `
 precision highp float;
 varying vec2 vUv;
 varying vec3 vNormal;
+varying vec3 vNormalCamSpace;
 varying vec3 vPosition;
 
 uniform sampler2D heightmap;
@@ -47,14 +48,12 @@ void main() {
   //vPosition.y = height.r;
   vPosition += vec3(-rx, height.r, -rz);
   gl_Position = projectionMatrix * modelViewMatrix * vec4( vPosition, 1.0 );
-  vNormal = texture2D(normalmap, hUV).rgb;
+  vNormal = normalize(texture2D(normalmap, hUV).rgb);
   //transform vertex normal to camera space as direction lights will be in cam space in frag shader
-  vNormal = normalMatrix * vNormal;
+  vNormalCamSpace = normalMatrix * vNormal;
 
 }
 `;
-
-
 
 const fragmentShader = `
 #if (NUM_DIR_LIGHTS > 0)
@@ -73,6 +72,7 @@ uniform sampler2D texture;
 uniform sampler2D rock_texture;
 uniform sampler2D sand_texture;
 varying vec3 vNormal; 
+varying vec3 vNormalCamSpace;
 varying vec3 vPosition;
 varying vec2 vUv;
 
@@ -89,50 +89,38 @@ void main() {
 
     float dProd = 1.0;//0.5 + 0.5 * max(0.0, dot(vNormal, light));
     
-    vec3 blend0 = heightblend( texture2D(sand_texture, vUv).rgb, texture2D(texture, vUv).rgb , vPosition.y, 120.0, 10.0);
-    vec3 blend1 = heightblend( blend0, texture2D(rock_texture, vUv).rgb , vPosition.y, 350.0, 30.0);
-    vec3 blend2 = heightblend( blend1, vec3(1.0, 1.0, 1.0) , vPosition.y, 500.0, 15.0);
-    
-    gl_FragColor = dProd * vec4(blend2, 1.0);
-  
+    //how near to vertical is the surface
+    float verticality = 1.0 - dot(vNormal, vec3(0.0, 1.0, 0.0)); // how vertical is the surface?
+    float v_lower = 0.25;
+    float v_upper = 0.4;
+    if(verticality > v_lower && verticality < v_upper){
+      verticality = (verticality - v_lower) / (v_upper - v_lower);
+      //verticality = 1.0;
+    }else if (verticality > v_upper){
+      verticality = 1.0;
+    }else {
+      verticality = 0.0;
+    }
+
+    vec3 blend0 = heightblend( texture2D(sand_texture, vUv).rgb, texture2D(texture, vUv).rgb , vPosition.y, 360.0, 20.0);
+    vec3 blend1 = heightblend( blend0, texture2D(rock_texture, vUv).rgb , vPosition.y, 700.0, 80.0);
+    vec3 blend2 = mix(blend1, texture2D(rock_texture, vUv).rgb, verticality);
+    vec3 blend3 = heightblend( blend2, vec3(1.0, 1.0, 1.0) , vPosition.y, 1000.0, 15.0);
+
 #if (NUM_DIR_LIGHTS > 0)
     vec3 addlights = vec3(0.0, 0.0, 0.0);
     
     for(int i = 0; i < NUM_DIR_LIGHTS; i++) {
         DirectionalLight directLight = directionalLights[i];
         vec3 direction = directLight.direction;// - vPosition;
-        addlights += clamp(dot(direction.xyz, vNormal), 0.0, 1.0) * directLight.color;     
+        addlights += clamp(dot(direction.xyz, vNormalCamSpace), 0.0, 1.0) * directLight.color;     
     }
-    gl_FragColor = vec4(addlights * blend2, 1.0);
+    gl_FragColor = vec4(addlights * blend3, 1.0);
 #endif
 
   
 }
 `;
-
-var debug = {
-  do: true,
-  maxu: 0.0,
-  maxv: 0.0,
-  max_x:0,
-  max_y:0,  
-  space_x: null,
-  space_y: null,
-  recordxy: function(x, y){
-    if(x>this.max_x)this.max_x = x;
-    if(y > this.max_y)this.max_y = y;
-  },
-  recorduv: function(u, v){
-    if(u>this.max_u)this.max_u = u;
-    if(v > this.max_v)this.max_v = v;
-  },
-  recordspacing: function (x, y){
-    this.space_x = x;
-    this.space_y = y;
-  }
-};
-
-
 
 AFRAME.registerComponent('terrain', {
     schema: {
@@ -146,25 +134,15 @@ AFRAME.registerComponent('terrain', {
     //generates a chunk of terrain geometry
     generateChunk: function(start_x, start_y, chunk_width, chunk_depth){
       //declare some temporary vars just once, for reuse      
-      var t_point = {x:0, y:0, z:0};
+      let t_point = {x:0, y:0, z:0};
 
-      var geometry = new THREE.Geometry();      
-      var points = [];
-      var centroid = {x:0, y:0, z:0};
-      var spacing_x = (this.data.width / ((this.data.width_divisions / chunk_width) + 1)) / (chunk_width - 1);
-      var spacing_y = (this.data.depth / ((this.data.depth_divisions / chunk_depth) + 1)) / (chunk_depth - 1);
-      //var spacing_x = this.data.width / this.data.width_divisions;//(this.data.width / ((this.data.width_divisions / chunk_width) + 1)) / (chunk_width - 1);
-      //var spacing_y = this.data.depth / this.data.depth_divisions;//(this.data.depth / ((this.data.depth_divisions / chunk_depth) + 1)) / (chunk_depth - 1);
-      debug.recordspacing(spacing_x, spacing_y);
-      //console.log("start y = " + start_y);
-      for(var y = start_y; y < chunk_depth + start_y; y++){        
-        for(var x = start_x; x < chunk_width + start_x; x++){                    
-          //console.log(x+", "+y)   
-          /*var p = {
-            x: (x - start_x) * spacing_x,
-            y: 0,
-            z: (y - start_y) * spacing_y
-          }; */ 
+      let geometry = new THREE.Geometry();            
+      let centroid = {x:0, y:0, z:0};
+      let spacing_x = (this.data.width / ((this.data.width_divisions / chunk_width) + 1)) / (chunk_width - 1);
+      let spacing_y = (this.data.depth / ((this.data.depth_divisions / chunk_depth) + 1)) / (chunk_depth - 1);
+            
+      for(let y = start_y; y < chunk_depth + start_y; y++){        
+        for(let x = start_x; x < chunk_width + start_x; x++){                              
           t_point.x = (x - start_x) * spacing_x;
           t_point.y = 0;
           t_point.z = (y - start_y) * spacing_y;
@@ -177,12 +155,12 @@ AFRAME.registerComponent('terrain', {
         }
       }  
 
-      var v,nv,u,nu, i;
+      let v,nv,u,nu, i;
 
-      for(var y = 0; y < chunk_depth - 1; y++){                
+      for(let y = 0; y < chunk_depth - 1; y++){                
         v = (y + start_y) * 0.1;
         nv = v + 0.1;
-        for(var x = 0; x < chunk_width - 1; x++){
+        for(let x = 0; x < chunk_width - 1; x++){
           u = (x + start_x) * 0.1;
           nu = u + 0.1;      
           i = (y * chunk_width) + x;  
@@ -197,29 +175,13 @@ AFRAME.registerComponent('terrain', {
       geometry.mergeVertices();
       geometry.computeFaceNormals();
       geometry.computeVertexNormals();
-      
-      //compute bounding sphere
-      // This would work except our geometry will change depending
-      // on where the camera is
-      /*centroid.x /= points.length;
-      centroid.y /= points.length;
-      centroid.z /= points.length;
-      var radius = 0;
-      for( var i = 0; i < points.length; i++){
-        r = Math.sqrt( 
-          ((points[i].x - centroid.x) ** 2) +
-          ((points[i].y - centroid.y) ** 2) +
-          ((points[i].z - centroid.z) ** 2)
-        );
-        radius = Math.max(radius, r);
-      }*/
-      
+            
       centroid.x = chunk_width * spacing_x / 2;      
       centroid.z = chunk_depth * spacing_y / 2;
       centroid.y = this.data.max_height / 2;
       radius = Math.sqrt(centroid.x ** 2 + centroid.y **2 + centroid.z **2);      
       
-      var bufGeometry =  new THREE.BufferGeometry().fromGeometry(geometry);
+      let bufGeometry =  new THREE.BufferGeometry().fromGeometry(geometry);
       bufGeometry.boundingSphere = {
         radius: radius,
         center: centroid
@@ -237,42 +199,34 @@ AFRAME.registerComponent('terrain', {
       return this.data.depth;
     },
 
-    getHeight: function(x, y){
-      var w = this.data.width;
-      var d = this.data.depth;
+    getHeight: function(x, y){      
+      let w = this.data.width;
+      let d = this.data.depth;
       x = ((x % w) + w) % w;
       y = ((y % d) + d) % d;
-      var w_div = this.data.width_divisions;
-      var d_div = this.data.depth_divisions;
-      var spacing_x = w / (w_div - 1);
-      var spacing_y = d / (d_div - 1);
+      let w_div = this.data.width_divisions;
+      let d_div = this.data.depth_divisions;
+      let spacing_x = w / (w_div - 1);
+      let spacing_y = d / (d_div - 1);
 
-      var iy = (y / spacing_y) | 0;
-      var ix = (x / spacing_x) | 0;
+      let iy = (y / spacing_y) | 0;
+      let ix = (x / spacing_x) | 0;
 
       //position x and y within local cell, normalised to range 0.0 to 1.0
-      var fx = (x - (ix * spacing_x)) / spacing_x;
-      var fy = (y - (iy * spacing_y)) / spacing_y;
+      let fx = (x - (ix * spacing_x)) / spacing_x;
+      let fy = (y - (iy * spacing_y)) / spacing_y;
 
-      var vertex = (iy * w_div) + ix;
+      let vertex = (iy * w_div) + ix;
 
       //get heights of the four surrounding vertices and interpolate
-      var h0 = this.heightMap[vertex];
-      var h1 = this.heightMap[vertex + 1];
-      var h2 = this.heightMap[vertex + d_div];
-      var h3 = this.heightMap[vertex + d_div + 1];
-      var h01 = h0 * (1 - fx) + (h1 * fx);
-      var h23 = h2 * (1 - fx) + (h3 * fx);
-      var h = h01 * (1 - fy) + (h23 * fy);
-      if(x == 800 && y == 800){
-        console.log("ix = " + ix + ", iy = " + iy);
-        console.log("spacing x = " + spacing_x + ", spacing y = " + spacing_y);
-        console.log("nearest vertex = " + (ix*spacing_x) + ", " + (iy*spacing_y));
-        console.log("fx = " + fx + ", fy = " + fy);
-        console.log("Vertex index = " + vertex);
-      
-        console.log("Height = " + h);
-      }
+      let h0 = this.heightMap[vertex];
+      let h1 = this.heightMap[vertex + 1];
+      let h2 = this.heightMap[vertex + d_div];
+      let h3 = this.heightMap[vertex + d_div + 1];
+      let h01 = h0 * (1 - fx) + (h1 * fx);
+      let h23 = h2 * (1 - fx) + (h3 * fx);
+      let h = h01 * (1 - fy) + (h23 * fy);
+
       return h;
     },
 
@@ -280,27 +234,28 @@ AFRAME.registerComponent('terrain', {
     // as an array for use in getting height later and as a canvas context to
     //be used as a texture
     generateHeightMap: function(){
-      var perlin_gen = new PerlinNoiseGenerator();      
+      let perlin_gen = new PerlinNoiseGenerator();      
       this.heightMap = perlin_gen.generate2(this.data.width_divisions, this.data.depth_divisions, [128, 64, 32, 16, 8], [1, 0.5, 0.25, 0.125, 0.125/2]);      
       
-      var mapDim = {
+      let mapDim = {
         x: this.data.width_divisions,
         y: this.data.depth_divisions,
       }
       
       this.heightMapCanvas = document.getElementById("heightcanvas");
-      var ctx = this.heightMapCanvas.getContext("2d");
+      let ctx = this.heightMapCanvas.getContext("2d");
 
-      var imgData = ctx.createImageData(mapDim.x, mapDim.y);      
-      for (var i = 0; i < imgData.data.length; i += 4) {          
-          var px = (i/4) % mapDim.x;
-          var py = ((i/4) / mapDim.x) | 0;
-          var p = this.heightMap[i / 4];
-          var rgb = (p * 255) | 0;
+      let imgData = ctx.createImageData(mapDim.x, mapDim.y);
+            
+      for (let i = 0; i < imgData.data.length; i += 4) {          
+          let px = (i/4) % mapDim.x;
+          let py = ((i/4) / mapDim.x) | 0;
+          let p = this.heightMap[i / 4];
+          let rgb = (p * 255) | 0;
           //our canvas and therefore the texture is upside down relative to the 
           //orientation we store the height values in so we calculate a new img
           //index that flips the heightmap vertically.
-          var img_index = (mapDim.x * ((mapDim.y - 1) - py)) + px;
+          let img_index = (mapDim.x * ((mapDim.y - 1) - py)) + px;
           img_index *= 4;
                     
           imgData.data[img_index+0] = rgb;
@@ -309,7 +264,7 @@ AFRAME.registerComponent('terrain', {
           imgData.data[img_index+3] = 255;                    
       }
 
-      for(var i = 0;i < this.heightMap.length; i++){
+      for(let i = 0;i < this.heightMap.length; i++){
         this.heightMap[i] *= this.data.max_height;            
       }
       
@@ -317,35 +272,35 @@ AFRAME.registerComponent('terrain', {
     },
 
     generateNormalMap: function(){
-      var vertexSpacing = {
+      let vertexSpacing = {
         x: this.data.width / (this.data.width_divisions - 1),
         z: this.data.depth / (this.data.depth_divisions - 1),
       }
-      var mapDim = {
+      let mapDim = {
         x: this.data.width_divisions,
         y: this.data.depth_divisions,
       }
 
-      var scene = this.el.sceneEl;     
+      let scene = this.el.sceneEl;     
       this.normalMapCanvas = document.getElementById("normcanvas");
-      var ctx = this.normalMapCanvas.getContext("2d");
-      var imgData = ctx.createImageData(this.data.width_divisions, this.data.depth_divisions);      
-      for (var i = 0; i < imgData.data.length; i += 4) {
-          var v_index = i / 4; //current vertex index                     
-          var ix = v_index % mapDim.x;
-          var iy = (v_index / mapDim.x) | 0;
+      let ctx = this.normalMapCanvas.getContext("2d");
+      let imgData = ctx.createImageData(this.data.width_divisions, this.data.depth_divisions);      
+      for (let i = 0; i < imgData.data.length; i += 4) {
+          let v_index = i / 4; //current vertex index                     
+          let ix = v_index % mapDim.x;
+          let iy = (v_index / mapDim.x) | 0;
           
-          var img_index = (mapDim.x * ((mapDim.y - 1) - iy)) + ix;
+          let img_index = (mapDim.x * ((mapDim.y - 1) - iy)) + ix;
           img_index *= 4;
 
-          var curVertex = new THREE.Vector3(0,0,0);
+          let curVertex = new THREE.Vector3(0,0,0);
           curVertex.x = ix * vertexSpacing.x;
           curVertex.y = this.heightMap[ix + iy * mapDim.y];
           curVertex.z = iy * vertexSpacing.z;
           
           //build array of surrounding vertix indices (there are six)
           
-          var vertex_indices = [];
+          let vertex_indices = [];
           vertex_indices.push( {x: ix - 1, y : iy + 1} );
           vertex_indices.push( {x: ix    , y : iy + 1} );
           vertex_indices.push( {x: ix + 1, y : iy    } );
@@ -354,8 +309,8 @@ AFRAME.registerComponent('terrain', {
           vertex_indices.push( {x: ix - 1, y : iy    } );
                     
           //now fetch actual vertex x, y, z values
-          var vertices = vertex_indices.map( (vi) => {
-            var v = {x: 0, y: 0, z: 0};
+          let vertices = vertex_indices.map( (vi) => {
+            let v = {x: 0, y: 0, z: 0};
             v.x = vi.x * vertexSpacing.x;
             v.z = vi.y * vertexSpacing.z;
 
@@ -363,13 +318,13 @@ AFRAME.registerComponent('terrain', {
             return new THREE.Vector3(v.x, v.y, v.z);
           });  
 
-          var normal = new THREE.Vector3(0,0,0);
-          var v1 = new THREE.Vector3(0,0,0);
-          var v2 = new THREE.Vector3(0,0,0);
-          var n = new THREE.Vector3(0,0,0);
-          var next_f;
+          let normal = new THREE.Vector3(0,0,0);
+          let v1 = new THREE.Vector3(0,0,0);
+          let v2 = new THREE.Vector3(0,0,0);
+          let n = new THREE.Vector3(0,0,0);
+          let next_f;
           //iterate through 6 surrounding faces
-          for(var f = 0; f < 6; f++){
+          for(let f = 0; f < 6; f++){
             next_f = (f + 1) % 6;            
             v1.subVectors(vertices[f], curVertex);
             v2.subVectors(vertices[next_f], curVertex);
@@ -392,18 +347,18 @@ AFRAME.registerComponent('terrain', {
       //sets up this.heightMap and this.heightMapCanvas
       this.generateHeightMap();
       this.generateNormalMap();
-      var texture = new THREE.TextureLoader().load( "assets/grass.jpg");
+      let texture = new THREE.TextureLoader().load( "assets/grass.jpg");
       texture.wrapT = texture.wrapS = THREE.RepeatWrapping;
-      var rock_texture = new THREE.TextureLoader().load( "assets/rock.jpg");
+      let rock_texture = new THREE.TextureLoader().load( "assets/rock.jpg");
       rock_texture.wrapT = rock_texture.wrapS = THREE.RepeatWrapping;
-      var sand_texture = new THREE.TextureLoader().load( "assets/sand.jpg");
+      let sand_texture = new THREE.TextureLoader().load( "assets/sand.jpg");
       sand_texture.wrapT = sand_texture.wrapS = THREE.RepeatWrapping;
-      var heightmap = new THREE.CanvasTexture(this.heightMapCanvas);
+      let heightmap = new THREE.CanvasTexture(this.heightMapCanvas);
       heightmap.wrapT = heightmap.wrapS = THREE.RepeatWrapping;
-      var normalmap = new THREE.CanvasTexture(this.normalMapCanvas);
+      let normalmap = new THREE.CanvasTexture(this.normalMapCanvas);
       normalmap.wrapT = normalmap.wrapS = THREE.RepeatWrapping;
       
-      var uniforms = {     
+      let uniforms = {     
         texture: { type: "t", value: null },
         rock_texture: { type: "t", value: null },
         sand_texture: { type: "t", value: null },
@@ -430,13 +385,13 @@ AFRAME.registerComponent('terrain', {
         lights:true
       });
 
-      var geo;
-      var mesh; 
+      let geo;
+      let mesh; 
       //n chunks must be > chunk size
-      var n_chunks_x = this.data.width_divisions / 16;
-      var n_chunks_y = this.data.depth_divisions / 16;
-      for(var j = 0; j < n_chunks_y + 1; j++){
-        for(var i = 0; i < n_chunks_x + 1; i++){
+      let n_chunks_x = this.data.width_divisions / 16;
+      let n_chunks_y = this.data.depth_divisions / 16;
+      for(let j = 0; j < n_chunks_y + 1; j++){
+        for(let i = 0; i < n_chunks_x + 1; i++){
           //console.log("Generating terrain chunk...");
           //console.log('j=', j);
           geo = this.generateChunk((i* n_chunks_x) - i, (j * n_chunks_y) - j, n_chunks_x, n_chunks_y);          
@@ -476,7 +431,7 @@ AFRAME.registerComponent('terrain', {
     
 
     do_tick: (function () {
-      var h = 0;
+      let h = 0;
       this.cameraEl = null;
       
       return function () {  

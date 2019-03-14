@@ -3,7 +3,7 @@ AFRAME.registerComponent('forest', {
         treecount: {default: 1000, min: 0},
         height: {default: 20, min:1},
         width: {default: 7, min:1},
-        height_variation: {default: 5, min:0},
+        height_letiation: {default: 5, min:0},
         texture: {},
         terrain_id: {},        
         alpha: {}          
@@ -16,15 +16,11 @@ AFRAME.registerComponent('forest', {
         // setup temporary storage, once
         if(this.temp == null){
             this.temp = {
-                n1: new THREE.Vector3( 0, 2, 1).normalize(),
-                n2: new THREE.Vector3( 1, 2, 0).normalize(),
-                n3: new THREE.Vector3( 0, 2,-1).normalize(),
-                n4: new THREE.Vector3(-1, 2, 0).normalize(),
                 n: [
-                    new THREE.Vector3( 0, 2, 1).normalize(),
-                    new THREE.Vector3( 1, 2, 0).normalize(),
-                    new THREE.Vector3( 0, 2,-1).normalize(),
-                    new THREE.Vector3(-1, 2, 0).normalize(),
+                    new THREE.Vector3( 0, 1, 0).normalize(),
+                    new THREE.Vector3( 0, 1, 0).normalize(),
+                    new THREE.Vector3( 0, 1, 0).normalize(),
+                    new THREE.Vector3( 0, 1, 0).normalize(),
                 ],
                 vertices: [],
                 normals: [],
@@ -89,8 +85,8 @@ AFRAME.registerComponent('forest', {
              x     , y + h,-w + z
         );
 
-        for(var i = 0; i < 4; i++){
-            for(var j = 0; j < 6; j++){
+        for(let i = 0; i < 4; i++){
+            for(let j = 0; j < 6; j++){
                 this.temp.normals.push(this.temp.n[i].x, this.temp.n[i].y, this.temp.n[i].z);
             }
         }
@@ -133,23 +129,23 @@ AFRAME.registerComponent('forest', {
 
     init: function () {        
         
-        var scene = this.el.sceneEl;//document.querySelector("a-scene");        
-        var terrain = scene.querySelector("#" + this.data.terrain_id);
+        let scene = this.el.sceneEl;//document.querySelector("a-scene");        
+        let terrain = scene.querySelector("#" + this.data.terrain_id);
                        
         console.log("Planting " + this.data.treecount + " trees...");      
                
-        var n_trees_planted = 0;
-        var terrain_w = terrain.components.terrain.getWidth();
-        var terrain_h = terrain.components.terrain.getDepth();
+        let n_trees_planted = 0;
+        let terrain_w = terrain.components.terrain.getWidth();
+        let terrain_h = terrain.components.terrain.getDepth();
         while(n_trees_planted < this.data.treecount){            
-            var tx = Math.random() * terrain_w;
-            var tz = Math.random() * terrain_h;
-            var ty = terrain.components.terrain.getHeight(tx, tz);
-            if(ty > 120 && ty < 320){
+            let tx = Math.random() * terrain_w;
+            let tz = Math.random() * terrain_h;
+            let ty = terrain.components.terrain.getHeight(tx, tz);
+            if(ty > 360 && ty < 620){
                 n_trees_planted++;
                 //tree_pos.push({x: tx, y:h, z:ty});
-                var tree_height = this.data.height + (this.data.height_variation * (Math.random() - 0.5));
-                var tree_width = this.data.width * (tree_height / this.data.height); //scale width proportionatly
+                let tree_height = this.data.height + (this.data.height_letiation * (Math.random() - 0.5));
+                let tree_width = this.data.width * (tree_height / this.data.height); //scale width proportionatly
                 this.addTree(tx, ty, tz, tree_width, tree_height);
             }           
         }
