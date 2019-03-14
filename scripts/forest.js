@@ -3,7 +3,7 @@ AFRAME.registerComponent('forest', {
         treecount: {default: 1000, min: 0},
         height: {default: 20, min:1},
         width: {default: 7, min:1},
-        height_letiation: {default: 5, min:0},
+        height_variation: {default: 5, min:0},
         texture: {},
         terrain_id: {},        
         alpha: {}          
@@ -144,7 +144,7 @@ AFRAME.registerComponent('forest', {
             if(ty > 360 && ty < 620){
                 n_trees_planted++;
                 //tree_pos.push({x: tx, y:h, z:ty});
-                let tree_height = this.data.height + (this.data.height_letiation * (Math.random() - 0.5));
+                let tree_height = this.data.height + (this.data.height_variation * (Math.random() - 0.5));
                 let tree_width = this.data.width * (tree_height / this.data.height); //scale width proportionatly
                 this.addTree(tx, ty, tz, tree_width, tree_height);
             }           

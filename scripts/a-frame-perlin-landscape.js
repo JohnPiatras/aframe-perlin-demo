@@ -29,8 +29,10 @@ void main() {
   float position_y = modelMatrix[3][1];
   
   float position_z = modelMatrix[3][2];
-  float a = position_x / (4800.0/2.55);
-  float b = position_z / (4800.0/2.55);
+  //float a = position_x / (4800.0/2.55);
+  //float b = position_z / (4800.0/2.55);
+  float a = float(width_divisions) * position_x / (100.0 * width);
+  float b = float(depth_divisions) * position_z / (100.0 * depth);
   a = fract(a);
   b = fract(b);
   vUv = uv + vec2(a, b);
@@ -41,7 +43,8 @@ void main() {
 
   //fix vertex world x and z to integer multiples of 1600 / 255
   //
-  float space = 4800.0 / 255.0;
+  //float space = 4800.0 / 255.0;
+  float space = width / (float(width_divisions) - 1.0);
   float ix = floor(wx / space) * space;
   float iz = floor(wz / space) * space;
   //get remainder parts to use to displace vertex x and z
@@ -49,7 +52,7 @@ void main() {
   float rz = wz - iz;
   
 
-  vec2 hUV = vec2(ix/4800.0, iz/4800.0);// + vec2(0.5, 0.5);
+  vec2 hUV = vec2(ix/width, iz/depth);// + vec2(0.5, 0.5);
   
   vec4 height = texture2D(heightmap, hUV) * max_height;
   vUv = hUV * 50.0;
