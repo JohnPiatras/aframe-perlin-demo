@@ -9,8 +9,9 @@ AFRAME.registerComponent('forest', {
         alpha: {}          
       },
 
+    
+
     addTree: function(geometry, x, y, z, w, h){
-        
         var start_vertex = geometry.vertices.length;
         geometry.vertices.push(new THREE.Vector3(-w + x,  y    , z));     
         geometry.vertices.push(new THREE.Vector3( w + x , y    , z));     
