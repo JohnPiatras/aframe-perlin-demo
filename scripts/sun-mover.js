@@ -32,7 +32,8 @@ AFRAME.registerComponent('sun-mover', {
         //spring in scotland - sun peaks at ~34deg from horizon
         //rot axis is -56deg from vertical around x-axis?
         rotationMatrix.makeRotationAxis(new THREE.Vector3(1, 0, 0), THREE.Math.degToRad(-56));
-        rotationMatrix.multiplyVector3(axis);
+        //rotationMatrix.multiplyVector3(axis);
+        axis.applyMatrix4(rotationMatrix);
         console.log("Sun axis = " + axis);
         rotationMatrix.makeRotationAxis(axis, angle);        
         var sun_normalized_pos ;
