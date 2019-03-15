@@ -325,7 +325,7 @@ AFRAME.registerComponent('terrain', {
             v.x = vi.x * vertexSpacing.x;
             v.z = vi.y * vertexSpacing.z;
 
-            v.y = this.heightMap[((vi.x + 256) % 256)+ ((vi.y + 256) % 256) * mapDim.y];
+            v.y = this.heightMap[((vi.x + mapDim.x) % mapDim.x)+ ((vi.y + mapDim.y) % mapDim.y) * mapDim.x];
             return new THREE.Vector3(v.x, v.y, v.z);
           });  
 
